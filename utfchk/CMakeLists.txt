@@ -6,7 +6,7 @@ add_executable(utfchk
 	main.cpp
 	utils.cpp
 	test.cpp
-)
+  "wch2mb.cpp")
 
 set_target_properties(utfchk PROPERTIES
     CXX_STANDARD 20

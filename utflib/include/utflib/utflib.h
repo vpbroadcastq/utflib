@@ -3,74 +3,106 @@
 #include <span>
 #include <filesystem>
 #include <vector>
-
-// char (tho signdness is ambiguous) instead of:
-// -uint8_t... maybe it should be uint8_t
-// -char8_t because the data is only putatively utf8
-// -std::byte because std::byte is a pain in the ass
-bool utfchk(std::span<const char>);
-void expect(bool, const char* = nullptr);
+#include <concepts>
+#include <ranges>
 
 
-class utf8_error {
+// A non-owning view of a well-formed utf8 code unit sequence encoding exactly one codepoint
+// TODO:  Templated on the underlying datatype?  Should I allow T's other than std::uint8_t?
+// TODO:  utf8_code_unit_sequence?  utf8_encoded_codepoint?  utf8_view?
+// TODO:  Is this useful?  Since it does ! allow mutation, it takes up more space than the actual
+//        byte sequence encoding the codepoint would.
+class utf8_codepoint : public std::ranges::view_interface<utf8_codepoint> {
 public:
-	enum class error : std::uint8_t {
-		invalid_initial_byte,
-		invalid_secondary_byte
-	};
+	utf8_codepoint() = delete;
+	static std::optional<utf8_codepoint> to_utf8_codepoint(std::span<const std::uint8_t> s);
 
-	// You can't make a utf8_error unless there is actually an error
-	// Note that is is possible to choose inconsistent combinations of values, however
-	utf8_error()=delete;
-	utf8_error(utf8_error::error, std::uint32_t, std::uint8_t) noexcept;
+	std::span<const std::uint8_t>::iterator begin() const;
+	std::span<const std::uint8_t>::iterator end() const;
 
-	// The index of the bad byte within the subsequence.  [0,3].  
-	int idx_bad_byte() const noexcept;
-	std::uint8_t bad_byte() const noexcept;
+	// std::ranges::view_interface generates empty() but a utf8_codepoint never points to an
+	// empty byte sequence.  empty() is always false, so the impl below is more effecient.
+	// TODO:  Hmmmmmmmmm is this a good idea?  Base-class methods will not defer to this, right?
+	constexpr bool empty() const {
+		return false;
+	}
 
-	// The anticipated size of the sequence computed from the initial byte
-	// What if it's the initial byte that is bad?
-	int sequence_size() const noexcept;
-
-	// The idx requested must be <= idx_bad_byte().
-	std::uint8_t byte(int) const noexcept;
-
+	friend class utf8_iterator;
+	friend class utf8_iterator_alt;
 private:
-	std::uint32_t m_in_progress_cp;
-	utf8_error::error m_error;
-	std::uint8_t m_bad_byte;
+	utf8_codepoint(const std::uint8_t*, const std::uint8_t*);
+	explicit utf8_codepoint(std::span<const std::uint8_t>);
+
+	std::span<const std::uint8_t> m_data;
 };
 
 
-class maybe_codepoint {
+// A non-owning view of a well-formed utf-16 code unit sequence encoding exactly one codepoint
+// TODO:  Templated on the underlying datatype?  Should I allow T's other than std::uint16_t?
+// TODO:  utf16_code_unit_sequence?  utf16_encoded_codepoint?  utf16_view?
+// TODO:  Is this useful?  Since it does ! allow mutation, it takes up more space than the actual
+//        byte sequence encoding the codepoint would.
+class utf16_codepoint : public std::ranges::view_interface<utf16_codepoint> {
 public:
-	// The result is undefined if you call either getter on an inappropriate object
-	std::uint32_t get_codepoint() const noexcept;
-	utf8_error get_error() const noexcept;
+	utf16_codepoint() = delete;
+	static std::optional<utf16_codepoint> to_utf16_codepoint(std::span<const std::uint16_t> s);
 
-	operator bool() const noexcept;
+	std::span<const std::uint16_t>::iterator begin() const;
+	std::span<const std::uint16_t>::iterator end() const;
+
+	// std::ranges::view_interface generates empty() but a utf16_codepoint never points to an
+	// empty byte sequence.  empty() is always false, so the impl below is more effecient.
+	// TODO:  Hmmmmmmmmm is this a good idea?  Base-class methods will not defer to this, right?
+	constexpr bool empty() const {
+		return false;
+	}
+
+	friend class utf16_iterator;
+	friend class utf16_iterator_alt;
 private:
-	union u {
-		utf8_error err;
-		std::uint32_t cp;
-	};
-	u m_data;
-	bool m_has_error;
+	utf16_codepoint(const std::uint16_t*, const std::uint16_t*);
+	explicit utf16_codepoint(std::span<const std::uint16_t>);
+
+	std::span<const std::uint16_t> m_data;
 };
 
 
-class utf8_iterator {
+// Value-semantic representation of a codepoint
+class codepoint {
 public:
-	utf8_iterator()=delete;
-	explicit utf8_iterator(std::span<const char>) noexcept;
+	// == 0
+	codepoint() = default;
+	explicit codepoint(utf8_codepoint);
+	explicit codepoint(utf16_codepoint);
 
-	maybe_codepoint operator*() const noexcept;
-	void operator++() noexcept;
-	void operator++(int) noexcept;
+	// TODO:  This does not need to be a template.  Let the user figure it out
+	template<typename T>
+	requires std::convertible_to<T,std::uint32_t>
+	static std::optional<codepoint> to_codepoint(T val) noexcept {
+		// ToDo:  If I am going to accept non-uint32_t types, need an is_valid_cp() that can work w/
+		// (-) #'s as well as those > uint32_max.
+		if (!is_valid_cp(static_cast<std::uint32_t>(val))) {
+			return std::nullopt;
+		}
+		return codepoint(static_cast<std::uint32_t>(val));
+	}
+
+	std::uint32_t get() const noexcept;
+
+	friend std::strong_ordering operator<=>(const codepoint&,const codepoint&) = default;
+	friend class utf8_iterator;
+	friend class utf16_iterator_alt;
+	friend class utf8_iterator_alt;
+	friend class utf16_iterator;
 private:
-	const char* m_pbeg;
-	const char* m_pend;
-	const char* m_p;
+	// Private because no validation is performed.  The value must be a valid codepoint.  Users should create
+	// codepoints via the static member to_codepoint(T).
+	explicit codepoint(std::uint32_t val) : m_val(val) {}
+
+	// TODO:  Dubious?  The impl has to assume it's UTF-8.  Maybe potential users of this should just make 
+	// the uint32_t conversion themselves and use the one above.  
+	explicit codepoint(std::span<const std::uint8_t>);
+
+	std::uint32_t m_val {};
 };
 
-int f();

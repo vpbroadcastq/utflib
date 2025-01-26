@@ -4,7 +4,7 @@ project(test VERSION 1.0 DESCRIPTION "Unit tests for utflib" LANGUAGES CXX)
 # Add source to this project's executable.
 add_executable(test
 	main.cpp
- "test_data.cpp" "test_data.h")
+ "utf8_testdata.cpp" "utf8_testdata.h" "utf8_iterator_tests.cpp" "utf8_iterator_alt_tests.cpp" "utf8_low_level.cpp" "utf8_encoders.cpp" "utf16_testdata.cpp" "utf16_testdata.h" "utf16_low_level.cpp" "utf16_iterator_tests.cpp"   "utf16_iterator_alt_tests.cpp")
 
 set_target_properties(test PROPERTIES
     CXX_STANDARD 20

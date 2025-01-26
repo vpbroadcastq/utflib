@@ -80,7 +80,7 @@ std::vector<test_data> g_td_invalid {
 	},
 };
 
-
+/*
 bool test_utfchk() {
 	// Valid
 	for (const auto& e : g_td_valid) {
@@ -100,4 +100,4 @@ bool test_utfchk() {
 		}
 	}
 }
-
+*/
