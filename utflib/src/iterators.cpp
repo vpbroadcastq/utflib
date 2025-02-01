@@ -13,10 +13,10 @@ utf8_iterator::utf8_iterator(std::span<const std::uint8_t> s) {
 }
 
 bool utf8_iterator::go_next() {
-	if (m_p == m_pend) {
+	if (is_finished()) {
 		return false;
 	}
-	std::span<const std::uint8_t> first_valid = seek_to_first_valid_utf8_sequence({m_p,static_cast<std::size_t>(m_pend-m_p)});
+	std::span<const std::uint8_t> first_valid = seek_to_first_valid_utf8_sequence({m_p,m_pend});
 	
 	if (m_p == first_valid.data()) {
 		// The current position (m_p) is the start of a valid byte sequence.
@@ -30,7 +30,7 @@ bool utf8_iterator::go_next() {
 }
 
 bool utf8_iterator::go_prev() {
-	if (m_p == m_pbeg) {
+	if (at_start()) {
 		return false;
 	}
 	// It won't work to seek backward until the first byte for which seek_to_first_valid_utf8_sequence() != m_p,
@@ -49,7 +49,7 @@ bool utf8_iterator::go_prev() {
 			m_p = p;
 			return true;
 		}
-		prev_valid = seek_to_first_valid_utf8_sequence({p,static_cast<std::size_t>(m_p-p)});
+		prev_valid = seek_to_first_valid_utf8_sequence({p,m_p});
 		if (prev_valid.data() != m_p) {
 			break;
 		}

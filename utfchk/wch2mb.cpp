@@ -49,7 +49,8 @@ void random_utf16_wch2multib() {
 		// wch2mb
 		std::vector<std::uint8_t> utf8_from_wch2mb(utf8_from_utf32.size()*2,0u);
 		// UTF-8 => lpDefaultChar and lpUsedDefaultChar must be set to NULL.
-		int wch2mb = WideCharToMultiByte(CP_UTF8, WC_SEPCHARS,
+		int wch2mb = WideCharToMultiByte(CP_UTF8,
+			WC_SEPCHARS,
 			reinterpret_cast<const wchar_t*>(random_utf16.data()),
 			random_utf16.size(),  // # of _characters_ - not clear what this means; could null-terminate to avoid
 			reinterpret_cast<char*>(utf8_from_wch2mb.data()),

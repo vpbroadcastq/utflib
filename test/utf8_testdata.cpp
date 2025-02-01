@@ -127,6 +127,7 @@ std::span<testdata_invalid_utf8_utf32> get_invalid_utf8_utf32_sequences() {
 	static std::array<testdata_invalid_utf8_utf32,14> d {{
 		{
 			// Example from the unicode standard
+			// 0xC2 is a valid lb and indicates a 2-byte sequence.  The single tb must be on [0x80,0xBF]
 			{0xC2,   0x41, 0x42},
 			{0xFFFD, 0x41, 0x42},
 			{0xFFFD, 0x41, 0x42}

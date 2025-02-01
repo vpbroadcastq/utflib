@@ -164,6 +164,7 @@ bool is_valid_utf8_single_codepoint(std::span<const std::uint8_t> s) {
 // p==end <=> sz==0
 // There is no meaningful "error" state here that is different from "searched all the way to the end"
 // Users should compare p to s.end(); if p<s.end(), sz~[1,4] && p+sz <= s.end()
+// TODO:  Why not just return a span?
 leading_byte_ptr_with_size seek_to_first_utf8_leading_byte(std::span<const std::uint8_t> s) {
 	leading_byte_ptr_with_size result;
 	result.p = s.data();

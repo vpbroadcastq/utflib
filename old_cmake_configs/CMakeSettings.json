@@ -12,7 +12,7 @@
       "ctestCommandArgs": "",
       "cmakeToolchain": "D:\\dev\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"
     },
-    {
+	{
       "name": "x64-RelWithDebInfo",
       "generator": "Ninja",
       "configurationType": "RelWithDebInfo",

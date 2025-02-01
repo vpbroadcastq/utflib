@@ -7,18 +7,29 @@
 #include <filesystem>
 #include <iostream>
 #include <format>
+#include <string>
 
-void print_random_utf8_sequences() {
+std::string get_random_utf8_sequences() {
 	std::random_device r;
 	std::default_random_engine re(r());
-	int n_sequences = 10;
-	int n_cp = 10;
+	int n_sequences = 1;
+	int n_cp = 1024;
 	std::string s;
 
 	for (int i=0; i<n_sequences; ++i) {
 		std::vector<std::uint8_t> v;
-		auto it = std::back_inserter(v);
-		it = random_utf8_sequence({0.0,1.0,0.0,0.0}, n_cp, re, it);
+		{
+			// Generate
+			auto it = std::back_inserter(v);
+			it = random_utf8_sequence({0.25,0.25,0.25,0.25}, n_cp, re, it);
+
+			// Validate
+			utf8_iterator u8it(v);
+			while (!u8it.is_finished()) {
+				expect(u8it.get_codepoint().has_value());
+				u8it.go_next();
+			}
+		}
 		for (const std::uint8_t b : v) {
 			s += std::format("{:#04X}, ", b);
 		}
@@ -26,7 +37,7 @@ void print_random_utf8_sequences() {
 		s += std::format("\n");
 		v.clear();
 	}
-	std::cout << s << std::endl;
+	return s;
 }
 
 void print_random_utf16_sequences() {
@@ -54,27 +65,40 @@ void print_random_utf16_sequences() {
 void random_utf8_to_and_from_utf32() {
 	std::random_device r;
 	std::default_random_engine re(r());
-	int n_sequences = 10000;
-	int n_cp = 1;
+	int n_sequences = 1;
+	int n_cp = 10000;
 
 	for (int i=0; i<n_sequences; ++i) {
-		std::vector<std::uint8_t> random_utf8;
-		auto it = std::back_inserter(random_utf8);
-		it = random_utf8_sequence({0.25,0.25,0.25,0.25}, n_cp, re, it);
-		expect(is_valid_utf8_single_codepoint(random_utf8));
+		std::vector<std::uint8_t> ru8;
+		{
+			auto it = std::back_inserter(ru8);
+			it = random_utf8_sequence({0.25,0.25,0.25,0.25}, n_cp, re, it);
+		}
 
-		std::uint32_t random_utf32 = to_utf32(random_utf8);
-		expect(is_valid_cp(random_utf32));
-
-		std::vector<std::uint8_t> utf8_from_utf32;
-		auto it2 = std::back_inserter(utf8_from_utf32);
-		it2 = to_utf8(random_utf32,it2);
-
-		expect(random_utf8.size() == utf8_from_utf32.size());
-		for (int i=0; i<random_utf8.size(); ++i) {
-			expect(random_utf8[i]==utf8_from_utf32[i]);
+		std::vector<std::uint32_t> ru32;
+		ru32.reserve(n_cp);
+		{
+			utf8_iterator u8it(ru8);
+			while (!u8it.is_finished()) {
+				expect(u8it.get_codepoint().has_value());
+				std::uint32_t cp = u8it.get_codepoint().value().get();
+				expect(is_valid_cp(cp));
+				ru32.push_back(cp);
+				u8it.go_next();
+			}
+		}
+		
+		std::vector<std::uint8_t> ru8_back;
+		auto ru8_back_it = std::back_inserter(ru8_back);
+		for (const std::uint32_t curr_u32 : ru32) {
+			ru8_back_it = to_utf8(curr_u32,ru8_back_it);
+		}
+		expect(ru8_back.size()==ru8.size());
+		for (std::size_t i=0; i<ru8.size(); ++i) {
+			expect(ru8[i]==ru8_back[i]);
 		}
 	}
+	return;
 }
 
 void random_utf16_to_and_from_utf32() {
@@ -168,6 +192,28 @@ bool random_utf16_file(const std::filesystem::path fp, int nlns, int ncp_ln) {
 	return writefile(fp, {p, nbytes});
 }
 
+std::string split_near_num_chars(const std::string& s, const int n, const char sep) {
+	std::string r;
+	r.reserve(s.size() + s.size()/n + 1);
+	auto it = s.cbegin();
+	while (it != s.cend()) {
+		int i=0;
+		while (it!=s.cend() && (i<n || *it!=sep)) {
+			r.push_back(*it);
+			++it;
+			++i;
+		}
+		if (it==s.cend()) { break; }
+
+		// i>=n && *it==sep
+		r.push_back('\n');
+		++it;  // skip the sep char
+		i = 0;
+	}
+	return r;
+}
+
+
 void random_utf16_wch2multib();
 
 
@@ -177,12 +223,15 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}*/
 	
-	random_utf16_wch2multib();
+	//random_utf16_wch2multib();
 	//utf16_iterate_sample();
 	//random_utf16_to_and_from_utf32();
-	//print_random_utf8_sequences();
+	
+	std::string ru8 = get_random_utf8_sequences();
+	std::cout << split_near_num_chars(ru8,81,' ');
+	
 	//print_random_utf16_sequences();
-	//random_to_and_from_utf32();
+	//random_utf8_to_and_from_utf32();
 	//iterate_sample();
 	//random_utf16_file("D:\\dev\\utflib\\ru16.txt", 1, 10);
 	

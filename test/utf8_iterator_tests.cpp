@@ -19,6 +19,7 @@ TEST(iterator_to_utf32_forward, valid) {
 			ASSERT_TRUE(idx_u32 < e.utf32.size());
 			std::optional<codepoint> ocp = it.get_codepoint();
 			std::optional<utf8_codepoint> ou8 = it.get_utf8();
+			bool b = ocp.has_value();
 			ASSERT_TRUE(ocp.has_value());
 			ASSERT_TRUE(ou8.has_value());
 			EXPECT_EQ(ocp->get(), e.utf32[idx_u32]);
@@ -77,6 +78,7 @@ TEST(iterator_to_utf32_forward, invalid) {
 			it.go_next();
 			++idx_u32;
 		}
+		bool b = idx_u32 == e.utf32.size();
 		EXPECT_TRUE(idx_u32 == e.utf32.size());
 		++entry_num;
 	}

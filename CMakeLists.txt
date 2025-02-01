@@ -9,9 +9,10 @@ endif()
 project("utflib")
 
 # sub-projects
+find_package(benchmark CONFIG REQUIRED)
 find_package(GTest REQUIRED)
 add_subdirectory("utflib")
 add_subdirectory("utfchk")
 add_subdirectory("test")
-
+add_subdirectory("benchmarks")
 
