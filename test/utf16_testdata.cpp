@@ -100,7 +100,7 @@ std::span<utf16_single_surrogate_testdata> get_utf16_trailing_surrogate_test_dat
 		// Valid _leading_ surrogates
 		{0xD800u, std::nullopt},
 		{0xD803u, std::nullopt},
-		{0xD834Eu, std::nullopt},
+		{0xD834u, std::nullopt},
 		{0xDBFFu, std::nullopt},
 	}};
 	return d;

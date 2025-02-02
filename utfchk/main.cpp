@@ -8,6 +8,7 @@
 #include <iostream>
 #include <format>
 #include <string>
+#include <algorithm>
 
 std::string get_random_utf8_sequences() {
 	std::random_device r;

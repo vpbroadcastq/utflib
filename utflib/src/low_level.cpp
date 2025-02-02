@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <span>
-
+#include <cstdlib>
 
 void expect(bool b, const char* msg) {
 	if (b) { return; }

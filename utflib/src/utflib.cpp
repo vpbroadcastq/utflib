@@ -118,6 +118,13 @@ codepoint::codepoint(std::span<const std::uint8_t> s) {
 	}
 }
 
+std::optional<codepoint> codepoint::to_codepoint(std::uint32_t val) noexcept {
+	if (!is_valid_cp(static_cast<std::uint32_t>(val))) {
+		return std::nullopt;
+	}
+	return codepoint(static_cast<std::uint32_t>(val));
+}
+
 std::uint32_t codepoint::get() const noexcept {
 	return m_val;
 }

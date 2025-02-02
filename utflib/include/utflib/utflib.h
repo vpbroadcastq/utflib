@@ -75,17 +75,7 @@ public:
 	explicit codepoint(utf8_codepoint);
 	explicit codepoint(utf16_codepoint);
 
-	// TODO:  This does not need to be a template.  Let the user figure it out
-	template<typename T>
-	requires std::convertible_to<T,std::uint32_t>
-	static std::optional<codepoint> to_codepoint(T val) noexcept {
-		// ToDo:  If I am going to accept non-uint32_t types, need an is_valid_cp() that can work w/
-		// (-) #'s as well as those > uint32_max.
-		if (!is_valid_cp(static_cast<std::uint32_t>(val))) {
-			return std::nullopt;
-		}
-		return codepoint(static_cast<std::uint32_t>(val));
-	}
+	static std::optional<codepoint> to_codepoint(std::uint32_t val) noexcept;
 
 	std::uint32_t get() const noexcept;
 
