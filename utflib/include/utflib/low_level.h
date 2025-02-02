@@ -34,7 +34,7 @@ bool is_valid_utf8_third_or_fourth_byte(std::uint8_t lb);
 // all third and fourth trailing bytes fall on [0x80, 0xBF], for certain code unit sequences,
 // the second trailing byte is restricted to fall on [0xA0, 0xBF], [0x80, 0x9F], [0x90, 0xBF],
 // or [0x80, 0x8F] depending on the leading byte; see Table 3-7.
-bool could_be_utf8_trailing_byte(std::uint8_t b);
+bool is_utf8_trailing_byte(std::uint8_t b);
 
 // From the first byte b of a multibyte sequence, computes the number of bytes in the sequence.
 // If b is not a valid leading byte of a multibyte sequence the result is undefined.  Do not 

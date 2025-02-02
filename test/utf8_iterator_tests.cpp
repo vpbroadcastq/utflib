@@ -8,9 +8,20 @@
 
 
 //
-// iterator
+// utf-8 iterator
 //
-TEST(iterator_to_utf32_forward, valid) {
+TEST(utf8_iterator_empty_sequence, getters_and_go_methods) {
+	std::span<std::uint8_t> td {};
+	utf8_iterator it(td);
+	EXPECT_TRUE(it.is_finished());
+	EXPECT_TRUE(it.at_start());
+	EXPECT_FALSE(it.get_utf8().has_value());
+	EXPECT_FALSE(it.get_codepoint().has_value());
+	EXPECT_FALSE(it.go_next());
+	EXPECT_FALSE(it.go_prev());
+}
+
+TEST(utf8_iterator_to_utf32_forward, valid) {
 	std::span<testdata_valid_utf8_utf32> td = get_valid_utf8_utf32_sequences();
 	for (const auto& e : td) {
 		utf8_iterator it(e.utf8);
@@ -33,7 +44,7 @@ TEST(iterator_to_utf32_forward, valid) {
 	}
 }
 
-TEST(iterator_to_utf32_backward, valid) {
+TEST(utf8_iterator_to_utf32_backward, valid) {
 	std::span<testdata_valid_utf8_utf32> td = get_valid_utf8_utf32_sequences();
 	for (const auto& e : td) {
 		utf8_iterator it(e.utf8);
@@ -55,7 +66,7 @@ TEST(iterator_to_utf32_backward, valid) {
 	}
 }
 
-TEST(iterator_to_utf32_forward, invalid) {
+TEST(utf8_iterator_to_utf32_forward, invalid) {
 	std::span<testdata_invalid_utf8_utf32> td = get_invalid_utf8_utf32_sequences();
 	int entry_num {0};
 	for (const auto& e : td) {
@@ -84,7 +95,7 @@ TEST(iterator_to_utf32_forward, invalid) {
 	}
 }
 
-TEST(iterator_to_utf32_backward, invalid) {
+TEST(utf8_iterator_to_utf32_backward, invalid) {
 	std::span<testdata_invalid_utf8_utf32> td = get_invalid_utf8_utf32_sequences();
 	int dataset_num {0};
 	for (const auto& e : td) {
@@ -97,6 +108,7 @@ TEST(iterator_to_utf32_backward, invalid) {
 			std::optional<codepoint> ocp = it.get_codepoint();
 			std::optional<utf8_codepoint> ou8 = it.get_utf8();
 			if (ocp) {
+				bool b = ocp->get()==e.utf32[idx_u32];
 				EXPECT_EQ(ocp->get(), e.utf32[idx_u32]);
 				EXPECT_TRUE(ou8.has_value());
 				// Verify that the iterator's utf8 and codepoint getters return the same thing

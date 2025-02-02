@@ -4,7 +4,7 @@
 #include <span>
 #include <cstdlib>
 
-void expect(bool b, const char* msg) {
+void expect(bool b, [[maybe_unsed]] const char* msg) {
 	if (b) { return; }
 	std::abort();
 }
@@ -46,7 +46,7 @@ bool is_valid_utf8_third_or_fourth_byte(std::uint8_t tb) {
 	return tb >= 0x80 && tb <= 0xBF;
 }
 
-bool could_be_utf8_trailing_byte(std::uint8_t b) {
+bool is_utf8_trailing_byte(std::uint8_t b) {
 	return (b>=0x80 && b<=0xBF);
 }
 
@@ -186,7 +186,6 @@ leading_byte_ptr_with_size seek_to_first_utf8_leading_byte(std::span<const std::
 }
 
 // Gets the first valid sequence it finds starting at s.begin()
-// Todo:  Computes, but then discards, the size?  Not really; the size is implicit in the span
 std::span<const std::uint8_t> seek_to_first_valid_utf8_sequence(std::span<const std::uint8_t> s) {
 	const std::uint8_t* p = s.data();
 	const std::uint8_t* p_end = s.data() + s.size();

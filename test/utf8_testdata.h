@@ -7,15 +7,6 @@
 //
 // UTF-8 Sequences
 //
-struct test_data {
-	std::vector<std::uint8_t> d;
-	std::vector<std::uint32_t> codepoints;
-	std::size_t idx_init_invalid;
-	bool is_valid;
-};
-// TODO:  These g_td datasets are old.  Drop them or fold them into the new-style test data
-extern std::vector<test_data> g_td_valid;
-extern std::vector<test_data> g_td_invalid;
 
 struct testdata_valid_utf8_utf32 {
 	std::vector<std::uint8_t> utf8;

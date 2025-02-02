@@ -36,33 +36,48 @@ bool utf8_iterator::go_prev() {
 	// It won't work to seek backward until the first byte for which seek_to_first_valid_utf8_sequence() != m_p,
 	// because you could have a sequence like this: [valid utf8 seq] [error seq] [valid utf8 seq], with
 	// m_p at the start of the second utf8 seq.
-	// While traversing backwards through the error seq and the first utf8 seq, seek_to_first_valid_utf8_sequence()
-	// will return the second utf8 seq until the iterator reaches the first byte of the first utf8 seq.
-	// However, go_prev() needs to position the iterator on the first byte of the error seq to match the
-	// reverse of the go_next() behavior.
+	// While traversing backwards through the error seq and the trailing bytes of the first utf8 seq,
+	// seek_to_first_valid_utf8_sequence() will return the lb of the second utf8 seq until the iterator reaches
+	// the first byte of the first utf8 seq.  However, go_prev() needs to position the iterator on the first byte
+	// of the error seq to match the reverse of the go_next() behavior.  It needs to seek backwards until it
+	// finds the lb of the next valid seq, and check forward to be sure there is no intervening invalid seq.
 	const std::uint8_t* p = m_p;
-	std::span<const std::uint8_t> prev_valid;
 	while (true) {
 		--p;
+		std::span<const std::uint8_t> prev = seek_to_first_valid_utf8_sequence({p,m_p});
+
 		if (p == m_pbeg) {
 			// May or may not be the start of an error seq
-			m_p = p;
+			// Consider |[valid-1][invalid][valid-2] with m_p initially on valid-2.
+			if (prev.data() == m_p) {
+				// p is on the start of an invalid subseq
+				m_p = p;
+			} else {
+				// p is on the lb of a valid subseq
+				// The question now is:  Is there an error seq between p and m_p?
+				if (prev.data() + prev.size() == m_p) {
+					// Nope
+					m_p = prev.data();
+				} else {
+					m_p = prev.data() + prev.size();
+				}
+			}
 			return true;
 		}
-		prev_valid = seek_to_first_valid_utf8_sequence({p,m_p});
-		if (prev_valid.data() != m_p) {
-			break;
+
+		if (prev.data() != m_p) {
+			// prev_valid.data() != m_p
+			// prev_valid is on the lb of a valid subseq.
+			// The question now is:  Is there an error seq between pre_valid.data() and m_p?
+			if (prev.data() + prev.size() == m_p) {
+				// Nope
+				m_p = prev.data();
+			} else {
+				m_p = prev.data() + prev.size();
+			}
+			return true;
 		}
 	}
-	// prev_valid.data() != m_p
-	// The question now is:  Is there an error seq between pre_valid.data() and m_p?
-	if (prev_valid.data() + prev_valid.size() == m_p) {
-		// Nope
-		m_p = prev_valid.data();
-	} else {
-		m_p = prev_valid.data() + prev_valid.size();
-	}
-	return true;
 }
 
 bool utf8_iterator::is_finished() const {
@@ -74,7 +89,7 @@ bool utf8_iterator::at_start() const {
 }
 
 std::optional<codepoint> utf8_iterator::get_codepoint() const {
-	std::span<const std::uint8_t> next_valid = seek_to_first_valid_utf8_sequence({m_p,static_cast<std::size_t>(m_pend-m_p)});
+	std::span<const std::uint8_t> next_valid = seek_to_first_valid_utf8_sequence({m_p,m_pend});
 	if (m_p != next_valid.data() || next_valid.size()==0) {
 		return std::nullopt;
 	}
@@ -82,7 +97,7 @@ std::optional<codepoint> utf8_iterator::get_codepoint() const {
 }
 
 std::optional<utf8_codepoint> utf8_iterator::get_utf8() const {
-	std::span<const std::uint8_t> next_valid = seek_to_first_valid_utf8_sequence({m_p,static_cast<std::size_t>(m_pend-m_p)});
+	std::span<const std::uint8_t> next_valid = seek_to_first_valid_utf8_sequence({m_p,m_pend});
 	if (m_p != next_valid.data() || next_valid.size()==0) {
 		return std::nullopt;
 	}
@@ -90,7 +105,7 @@ std::optional<utf8_codepoint> utf8_iterator::get_utf8() const {
 }
 
 std::span<const std::uint8_t> utf8_iterator::get_underlying() const {
-	std::span<const std::uint8_t> next_valid = seek_to_first_valid_utf8_sequence({m_p,static_cast<std::size_t>(m_pend-m_p)});
+	std::span<const std::uint8_t> next_valid = seek_to_first_valid_utf8_sequence({m_p,m_pend});
 	if (m_p != next_valid.data()) {
 		// m_p is on the first byte of an invalid subsequence
 		return {m_p,next_valid.data()};
@@ -118,7 +133,7 @@ bool utf8_iterator_alt::at_start() const {
 
 // false if it didn't go anywhere (=>is_finished() prior to the call)
 bool utf8_iterator_alt::go_next() {
-	if (m_p == m_pend) {
+	if (is_finished()) {
 		return false;
 	}
 
@@ -141,11 +156,11 @@ bool utf8_iterator_alt::go_next() {
 	while (true) {
 		++p;
 		if (p == m_pend) {
-			break;  // uhh...
+			break;
 		}
 		++curr_bytenum;
 		if (curr_bytenum > sz) {
-			break;  // success path
+			break;
 		}
 		// curr_bytenum <= sz
 		if (curr_bytenum == 2 && !is_valid_utf8_second_byte(*p,*m_p)) {
@@ -161,7 +176,7 @@ bool utf8_iterator_alt::go_next() {
 
 // false if it didn't go anywhere (=>at_start() prior to the call)
 bool utf8_iterator_alt::go_prev() {
-	if (m_p == m_pbeg) {
+	if (at_start()) {
 		return false;
 	}
 	// Seek backwards to the first putative leading byte, then forwards from there to the first
@@ -172,19 +187,18 @@ bool utf8_iterator_alt::go_prev() {
 		if (p == m_pbeg) {
 			break;
 		}
-		if (!could_be_utf8_trailing_byte(*p)) {
-			// could be a valid leading byte, could be a completely invalid byte like [0xC0, 0xC1], [0xF5,0xFF]
+		if (!is_utf8_trailing_byte(*p)) {
+			// Could be a valid leading byte, could be a completely invalid byte like [0xC0, 0xC1], [0xF5,0xFF]
 			break;
 		}
 	}
-	// p == m_pbeg || !could_be_utf8_trailing_byte(*p)
+	// p == m_pbeg || !is_utf8_trailing_byte(*p)
 	utf8_iterator_alt it({p, m_p});
 	std::span<const std::uint8_t> s;
 	while (true) {
 		p = it.get_underlying().data();
 		it.go_next();
-		s = it.get_underlying();
-		if (s.data()/*+s.size() */== m_p) {
+		if (it.get_underlying().data() == m_p) {
 			break;
 		}
 	}
@@ -298,17 +312,16 @@ bool utf16_iterator::go_prev() {
 }
 
 std::optional<codepoint> utf16_iterator::get_codepoint() const {
-	if (is_valid_utf16_codepoint(*m_p)) {
-		return codepoint(utf16_to_codepoint_value(*m_p));
+	std::span<const std::uint16_t> next_valid = seek_to_first_valid_utf16_sequence({m_p,m_pend});
+	if (m_p != next_valid.data() || next_valid.data()==0) {
+		return std::nullopt;
 	}
-	
-	if ((m_pend-m_p)>1
-		&& is_valid_utf16_surrogate_pair_leading(*m_p)
-		&& is_valid_utf16_surrogate_pair_trailing(*(m_p+1))) {
-		return codepoint(utf16_to_codepoint_value(*m_p, *(m_p+1)));
+
+	if (next_valid.size()==1) {
+		return codepoint(utf16_to_codepoint_value(next_valid[0]));
 	}
-	
-	return std::nullopt;
+
+	return codepoint(utf16_to_codepoint_value(next_valid[0],next_valid[1]));
 }
 
 std::optional<utf16_codepoint> utf16_iterator::get_utf16() const {
@@ -396,17 +409,16 @@ bool utf16_iterator_alt::go_prev() {
 }
 
 std::optional<codepoint> utf16_iterator_alt::get_codepoint() const {
-	if (is_valid_utf16_codepoint(*m_p)) {
-		return codepoint(utf16_to_codepoint_value(*m_p));
+	std::span<const std::uint16_t> next_valid = seek_to_first_valid_utf16_sequence({m_p,m_pend});
+	if (m_p != next_valid.data() || next_valid.data()==0) {
+		return std::nullopt;
 	}
-	
-	if ((m_pend-m_p)>1
-		&& is_valid_utf16_surrogate_pair_leading(*m_p)
-		&& is_valid_utf16_surrogate_pair_trailing(*(m_p+1))) {
-		return codepoint(utf16_to_codepoint_value(*m_p, *(m_p+1)));
+
+	if (next_valid.size()==1) {
+		return codepoint(utf16_to_codepoint_value(next_valid[0]));
 	}
-	
-	return std::nullopt;
+
+	return codepoint(utf16_to_codepoint_value(next_valid[0],next_valid[1]));
 }
 
 std::optional<utf16_codepoint> utf16_iterator_alt::get_utf16() const {

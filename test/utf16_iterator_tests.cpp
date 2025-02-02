@@ -7,6 +7,19 @@
 #include <vector>
 #include <optional>
 
+//
+// utf-16 iterator
+//
+TEST(utf16_iterator_empty_sequence, getters_and_go_methods) {
+	std::span<std::uint16_t> td {};
+	utf16_iterator it(td);
+	EXPECT_TRUE(it.is_finished());
+	EXPECT_TRUE(it.at_start());
+	EXPECT_FALSE(it.get_utf16().has_value());
+	EXPECT_FALSE(it.get_codepoint().has_value());
+	EXPECT_FALSE(it.go_next());
+	EXPECT_FALSE(it.go_prev());
+}
 
 TEST(utf16_iterator_to_utf32_forward, valid) {
 	std::span<testdata_utf16_utf32_sequences> td = get_valid_utf16_sequences();

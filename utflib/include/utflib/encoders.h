@@ -2,6 +2,8 @@
 #include <cstdint>
 #include "low_level.h"
 
+// TODO:  decoders.h/.cpp for reading in files; handle byte-order issues
+
 // Undefined if cp is not a valid codepoint
 template<typename OIt>
 OIt to_utf8(std::uint32_t cp, OIt out) {
