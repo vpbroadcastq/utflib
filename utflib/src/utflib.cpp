@@ -54,6 +54,31 @@ std::span<const std::uint16_t>::iterator utf16_codepoint::end() const {
 	return m_data.end();
 }
 
+//
+// UTF-32 view
+//
+std::optional<utf32_codepoint> utf32_codepoint::to_utf32_codepoint(std::span<const std::uint32_t> s) {
+	if (s.size()==1 && !is_valid_utf32_codepoint(s[0])) {
+		return std::nullopt;
+	}
+	return utf32_codepoint(s);
+}
+
+utf32_codepoint::utf32_codepoint(const std::uint32_t* beg, const std::uint32_t* end) {
+	m_data = std::span {beg, end};
+}
+
+utf32_codepoint::utf32_codepoint(std::span<const std::uint32_t> s) : m_data(s) {
+	//...
+}
+
+std::span<const std::uint32_t>::iterator utf32_codepoint::begin() const {
+	return m_data.begin();
+}
+std::span<const std::uint32_t>::iterator utf32_codepoint::end() const {
+	return m_data.end();
+}
+
 
 //
 // codepoint value type
@@ -92,6 +117,10 @@ codepoint::codepoint(utf16_codepoint u16) {
 	}
 }
 
+codepoint::codepoint(utf32_codepoint u32) {
+	m_val = u32[0];
+}
+
 // Private ctor; unchecked
 codepoint::codepoint(std::span<const std::uint8_t> s) {
 	int sz = s.size();
@@ -119,10 +148,10 @@ codepoint::codepoint(std::span<const std::uint8_t> s) {
 }
 
 std::optional<codepoint> codepoint::to_codepoint(std::uint32_t val) noexcept {
-	if (!is_valid_cp(static_cast<std::uint32_t>(val))) {
+	if (!is_valid_cp(val)) {
 		return std::nullopt;
 	}
-	return codepoint(static_cast<std::uint32_t>(val));
+	return codepoint(val);
 }
 
 std::uint32_t codepoint::get() const noexcept {

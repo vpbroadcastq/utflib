@@ -118,5 +118,53 @@ private:
 
 
 
+// Treats all ill-formed subsequences, no matter how long, and no matter their contents, as single errors
+class utf32_iterator {
+public:
+	utf32_iterator()=delete;
+	explicit utf32_iterator(std::span<const std::uint32_t>);
+
+	bool is_finished() const;
+	bool at_start() const;
+
+	bool go_next();  // false if it didn't go anywhere (=>is_finished() prior to the call)
+	bool go_prev();  // false if it didn't go anywhere (=>at_start() prior to the call)
+
+	std::optional<codepoint> get_codepoint() const;
+	std::optional<utf32_codepoint> get_utf32() const;
+	
+	// This is the only getter the iterator "should" expose but since it has to compute the valid
+	// code unit subsequence anyway it is effecient for it to also offer get_utf8().
+	std::span<const std::uint32_t> get_underlying() const;
+private:
+	const std::uint32_t* m_p {};
+	const std::uint32_t* m_pbeg {};
+	const std::uint32_t* m_pend {};
+};
+
+
+// Every word not part of a valid code unit sequence is treated as an indivdual error
+class utf32_iterator_alt {
+public:
+	utf32_iterator_alt()=delete;
+	explicit utf32_iterator_alt(std::span<const std::uint32_t>);
+
+	bool is_finished() const;
+	bool at_start() const;
+
+	bool go_next();  // false if it didn't go anywhere (=>is_finished() prior to the call)
+	bool go_prev();  // false if it didn't go anywhere (=>at_start() prior to the call)
+
+	std::optional<codepoint> get_codepoint() const;
+	std::optional<utf32_codepoint> get_utf32() const;
+	
+	// This is the only getter the iterator "should" expose but since it has to compute the valid
+	// code unit subsequence anyway it is effecient for it to also offer get_utf8().
+	std::span<const std::uint32_t> get_underlying() const;
+private:
+	const std::uint32_t* m_p {};
+	const std::uint32_t* m_pbeg {};
+	const std::uint32_t* m_pend {};
+};
 
 

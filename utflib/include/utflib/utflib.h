@@ -67,6 +67,37 @@ private:
 };
 
 
+// A non-owning view of a well-formed utf-32 code unit sequence encoding exactly one codepoint
+// TODO:  Templated on the underlying datatype?  Should I allow T's other than std::uint16_t?
+// TODO:  utf32_code_unit_sequence?  utf32_encoded_codepoint?  utf32_view?
+// TODO:  Is this useful?  Since it does ! allow mutation, it takes up more space than the actual
+//        byte sequence encoding the codepoint would.
+class utf32_codepoint : public std::ranges::view_interface<utf32_codepoint> {
+public:
+	utf32_codepoint() = delete;
+	static std::optional<utf32_codepoint> to_utf32_codepoint(std::span<const std::uint32_t> s);
+
+	std::span<const std::uint32_t>::iterator begin() const;
+	std::span<const std::uint32_t>::iterator end() const;
+
+	// std::ranges::view_interface generates empty() but a utf16_codepoint never points to an
+	// empty byte sequence.  empty() is always false, so the impl below is more effecient.
+	// TODO:  Hmmmmmmmmm is this a good idea?  Base-class methods will not defer to this, right?
+	constexpr bool empty() const {
+		return false;
+	}
+
+	friend class utf32_iterator;
+	friend class utf32_iterator_alt;
+private:
+	utf32_codepoint(const std::uint32_t*, const std::uint32_t*);
+	explicit utf32_codepoint(std::span<const std::uint32_t>);
+
+	std::span<const std::uint32_t> m_data;
+};
+
+
+
 // Value-semantic representation of a codepoint
 class codepoint {
 public:
@@ -74,6 +105,7 @@ public:
 	codepoint() = default;
 	explicit codepoint(utf8_codepoint);
 	explicit codepoint(utf16_codepoint);
+	explicit codepoint(utf32_codepoint);
 
 	static std::optional<codepoint> to_codepoint(std::uint32_t val) noexcept;
 
@@ -81,9 +113,11 @@ public:
 
 	friend std::strong_ordering operator<=>(const codepoint&,const codepoint&) = default;
 	friend class utf8_iterator;
-	friend class utf16_iterator_alt;
 	friend class utf8_iterator_alt;
+	friend class utf16_iterator_alt;
 	friend class utf16_iterator;
+	friend class utf32_iterator_alt;
+	friend class utf32_iterator;
 private:
 	// Private because no validation is performed.  The value must be a valid codepoint.  Users should create
 	// codepoints via the static member to_codepoint(T).

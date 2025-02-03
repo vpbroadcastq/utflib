@@ -350,3 +350,26 @@ bool is_valid_utf16_single_codepoint(std::span<const std::uint16_t> s) {
 	}
 	return false;
 }
+
+
+//
+// UTF-32
+//
+
+// 3.9.1 UTF-32
+// Any UTF-32 code unit greater than 0x0010FFFF16 is ill-formed.
+bool is_valid_utf32_codepoint(std::uint32_t dw) {
+	return is_valid_cp(dw);
+}
+
+// The size of the span is always 1 or 0 (if there is nothing valid on the input range)
+std::span<const std::uint32_t> seek_to_first_valid_utf32_sequence(std::span<const std::uint32_t> s) {
+	const std::uint32_t* p = s.data();
+	const std::uint32_t const* p_end = s.data()+s.size();
+	while (p != p_end) {
+		if (is_valid_utf32_codepoint(*p)) {
+			return {p,p+1};
+		}
+	}
+	return {p_end, p_end};
+}

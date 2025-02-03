@@ -129,4 +129,22 @@ std::span<const std::uint16_t> seek_to_first_valid_utf16_sequence(std::span<cons
 // s.size()==2 && is_valid_utf16_surrogate_pair(s[0],s[1])
 bool is_valid_utf16_single_codepoint(std::span<const std::uint16_t> s);
 
+
+//
+// UTF-32
+//
+
+// 3.9.1 UTF-32
+// Any UTF-32 code unit greater than 0x0010FFFF16 is ill-formed.
+// Because surrogate code points are not included in the set of Unicode scalar values,
+// UTF-32 code units in the range 0000D80016..0000DFFF16 are ill-formed.
+// TODO:  Do i really need this?  See is_valid_cp
+bool is_valid_utf32_codepoint(std::uint32_t dw);
+
+// The size of the span is always 1 or 0 (if there is nothing valid on the input range)
+// This really only exists for consistency with the api for the other encoding forms
+std::span<const std::uint32_t> seek_to_first_valid_utf32_sequence(std::span<const std::uint32_t> s);
+
+
+
 void expect(bool, const char* = nullptr);
