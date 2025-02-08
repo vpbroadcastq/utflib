@@ -370,6 +370,7 @@ std::span<const std::uint32_t> seek_to_first_valid_utf32_sequence(std::span<cons
 		if (is_valid_utf32_codepoint(*p)) {
 			return {p,p+1};
 		}
+		++p;
 	}
 	return {p_end, p_end};
 }
