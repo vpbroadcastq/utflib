@@ -193,6 +193,98 @@ bool random_utf16_file(const std::filesystem::path fp, int nlns, int ncp_ln) {
 	return writefile(fp, {p, nbytes});
 }
 
+std::vector<std::uint32_t> random_utf32_to_file(const std::filesystem::path fp, int nlns, int ncp_ln) {
+	std::random_device r;
+	std::default_random_engine re(r());
+
+	std::vector<std::uint32_t> ru32;
+	for (int i=0; i<nlns; ++i) {
+		auto it = std::back_inserter(ru32);
+		it = random_utf32_sequence(ncp_ln, re, it);
+		*it = std::uint32_t {0x0Au};
+	}
+
+	const std::byte* p = reinterpret_cast<const std::byte*>(ru32.data());
+	std::size_t nbytes = (sizeof(std::uint32_t)/sizeof(std::byte))*ru32.size();
+	writefile(fp, {p, nbytes});
+	return ru32;
+}
+
+struct random_all_encodings {
+	std::vector<std::uint32_t> u32;
+	std::vector<std::uint16_t> u16;
+	std::vector<std::uint8_t> u8;
+};
+random_all_encodings random_codepoints_all_formats_to_files(std::filesystem::path fp, int nlns, int ncp_ln) {
+	std::string file_name_no_ext = fp.stem().string();
+	std::string file_name_ext = fp.extension().string();
+
+	// Generate utf32 & write file
+	std::vector<std::uint32_t> ru32 = random_utf32_to_file(fp, nlns, ncp_ln);
+
+	// Encode the random utf32 -> utf8
+	std::filesystem::path u8_fp = fp.replace_filename(file_name_no_ext+"_u8"+file_name_ext);
+	std::vector<std::uint8_t> ru8;
+	auto it_u8 = std::back_inserter(ru8);
+	for (std::uint32_t cp : ru32) {
+		it_u8 = to_utf8(cp, it_u8);
+	}
+	bool success_u8 = writefile(u8_fp,{reinterpret_cast<std::byte*>(ru8.data()), ru8.size()});
+	expect(success_u8);
+	if (!success_u8) {
+		return {};
+	}
+
+	// Encode the random utf32 -> utf16
+	std::filesystem::path u16_fp = fp.replace_filename(file_name_no_ext+"_u16"+file_name_ext);
+	std::vector<std::uint16_t> ru16;
+	auto it_u16 = std::back_inserter(ru16);
+	for (std::uint32_t cp : ru32) {
+		it_u16 = to_utf16(cp, it_u16);
+	}
+	std::size_t nbytes_16 = (sizeof(std::uint16_t)/sizeof(std::byte))*ru16.size();
+	bool success_u16 = writefile(u16_fp,{reinterpret_cast<std::byte*>(ru16.data()), nbytes_16});
+	expect(success_u16);
+	if (!success_u16) {
+		return {};
+	}
+
+	return random_all_encodings {std::move(ru32), std::move(ru16), std::move(ru8)};
+}
+
+std::string u32_to_string(std::span<const std::uint32_t> u32) {
+	std::string s;
+	s.reserve(u32.size());
+	for (const std::uint32_t dw : u32) {
+		s += std::format("{:#08X}u, ", dw);
+	}
+	std::replace(s.begin(),s.end(),'X','x');
+	s += std::format("\n");
+	return s;
+}
+
+std::string u16_to_string(std::span<const std::uint16_t> u16) {
+	std::string s;
+	s.reserve(u16.size());
+	for (const std::uint16_t w : u16) {
+		s += std::format("{:#06X}u, ", w);
+	}
+	std::replace(s.begin(),s.end(),'X','x');
+	s += std::format("\n");
+	return s;
+}
+
+std::string u8_to_string(std::span<const std::uint8_t> u8) {
+	std::string s;
+	s.reserve(u8.size());
+	for (const std::uint8_t b : u8) {
+		s += std::format("{:#04X}u, ", b);
+	}
+	std::replace(s.begin(),s.end(),'X','x');
+	s += std::format("\n");
+	return s;
+}
+
 std::string split_near_num_chars(const std::string& s, const int n, const char sep) {
 	std::string r;
 	r.reserve(s.size() + s.size()/n + 1);
@@ -223,13 +315,22 @@ int main(int argc, char* argv[]) {
 		std::cout << "Expected a file path" << std::endl;
 		return 1;
 	}*/
-	
+
+	{
+		random_all_encodings rcps = random_codepoints_all_formats_to_files("D:\\dev\\utflib\\rcps.txt", 5, 5);
+		std::cout << u32_to_string(rcps.u32) << "\n\n";
+		std::cout << u16_to_string(rcps.u16) << "\n\n";
+		std::cout << u8_to_string(rcps.u8) << "\n\n";
+		std::cout << std::endl;
+		std::cout << std::endl;
+	}
+
 	//random_utf16_wch2multib();
 	//utf16_iterate_sample();
 	//random_utf16_to_and_from_utf32();
 	
-	std::string ru8 = get_random_utf8_sequences();
-	std::cout << split_near_num_chars(ru8,81,' ');
+	//std::string ru8 = get_random_utf8_sequences();
+	//std::cout << split_near_num_chars(ru8,81,' ');
 	
 	//print_random_utf16_sequences();
 	//random_utf8_to_and_from_utf32();

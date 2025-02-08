@@ -86,3 +86,24 @@ OIt random_utf16_sequence(utf16_subseq_len_probability probs, int n_cp, std::def
 	return out;
 }
 
+
+template<typename OIt>
+OIt random_utf32_sequence(int n_cp, std::default_random_engine& re, OIt out) {
+	std::uniform_int_distribution<int> above_or_below(0,1);
+	std::uniform_int_distribution<std::uint32_t> below(0x0u,0xD7FFu);
+	std::uniform_int_distribution<std::uint32_t> above(0xE000u,0x10FFFFu);
+	for (int i=0; i<n_cp; ++i) {
+		bool gen_below = above_or_below(re)==0;
+		std::uint32_t cp {};
+		if (gen_below) {
+			cp = below(re);
+		} else {
+			cp = above(re);
+		}
+		expect(is_valid_cp(cp));
+		*out = cp;
+		++out;
+	}
+	return out;
+}
+

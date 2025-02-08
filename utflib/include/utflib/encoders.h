@@ -3,6 +3,8 @@
 #include "low_level.h"
 
 // TODO:  decoders.h/.cpp for reading in files; handle byte-order issues
+// TODO:  A single cp is just a special case of a range containing a single cp.  These functions should
+//        accept ranges, not single cp's.
 
 // Undefined if cp is not a valid codepoint
 template<typename OIt>
