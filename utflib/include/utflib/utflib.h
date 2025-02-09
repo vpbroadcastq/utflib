@@ -97,6 +97,20 @@ private:
 };
 
 
+// TODO:  My vocabulary is off:  "Because surrogate code points are not included in the set of Unicode
+// scalar values, UTF-32 code units in the range 0000D80016..0000DFFF16 are ill-formed."  Unpaired
+// surrogates _are_ valid "codepoints."  Also, "In the Unicode Standard, the codespace consists of the
+// integers from 0 to 10FFFF16, comprising 1,114,112 code points available for assigning the repertoire
+// of abstract characters.  Also, Table 2-3. Types of Code Points refers to surrogates as codepoints and
+// assigns them a category.  A better name might be scalar_value?  However, the caption for Fig 2-11
+// appears to contradict this language and uses the term "codepoint" the way i am using it here.  But
+// then, "As for all of the Unicode encoding forms, UTF-32 is restricted to representation of code points
+// in the ranges 0..D7FF16 and E00016..10FFFF16—that is, Unicode scalar values."  And, "The value of each
+// UTF-32 code unit corresponds exactly to the Unicode code point value. This situation differs
+// significantly from that for UTF-16 and especially UTF-8, where the code unit values often change
+// unrecognizably from the code point value."   ... So are unpaired surrogates codepoints or not???
+// Pretty sure surrogates are codepoints:  "Surrogates Area. The Surrogates Area contains only surrogate
+// code points and no encoded characters. See Section 23.6, Surrogates Area, for more details."
 
 // Value-semantic representation of a codepoint
 class codepoint {
