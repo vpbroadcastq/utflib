@@ -1,75 +1,109 @@
 #pragma once
+#include <array>
 #include <cstdint>
 #include "low_level.h"
+#include "utflib.h"
 
 // TODO:  decoders.h/.cpp for reading in files; handle byte-order issues
 // TODO:  A single cp is just a special case of a range containing a single cp.  These functions should
 //        accept ranges, not single cp's.
 
-// Undefined if cp is not a valid codepoint
-template<typename OIt>
-OIt to_utf8(std::uint32_t cp, OIt out) {
-	// Table 3-6. UTF-8 Bit Distribution
-	// Scalar Value                 First Byte    Second Byte    Third Byte    Fourth Byte
-	// 00000000 0xxxxxxx            0xxxxxxx
-	// 00000yyy yyxxxxxx            110yyyyy      10xxxxxx
-	// zzzzyyyy yyxxxxxx            1110zzzz      10yyyyyy       10xxxxxx
-	// 000uuuuu zzzzyyyy yyxxxxxx   11110uuu      10uuzzzz       10yyyyyy      10xxxxxx
-	int sz = size_utf8_multibyte_seq_from_codepoint(cp);
-	if (sz == 1) {
-		*out = static_cast<std::uint8_t>(cp);
-		++out;
-	} else if (sz == 2) {
-		// 00000yyy yyxxxxxx            110yyyyy      10xxxxxx
-		*out = static_cast<std::uint8_t>(0b1100'0000u | (0b0001'1111u & (cp>>6)));
-		++out;
-		*out = static_cast<std::uint8_t>(0b1000'0000u | (0b0011'1111u & cp));
-		++out;
-	} else if (sz == 3) {
-		// zzzzyyyy yyxxxxxx            1110zzzz      10yyyyyy       10xxxxxx
-		*out = static_cast<std::uint8_t>(0b1110'0000u | (0b0000'1111u & (cp>>12)));
-		++out;
-		*out = static_cast<std::uint8_t>(0b1000'0000u | (0b0011'1111u & (cp>>6)));
-		++out;
-		*out = static_cast<std::uint8_t>(0b1000'0000u | (0b1011'1111u & cp));
-		++out;
-	} else if (sz == 4) {
-		// 000uuuuu zzzzyyyy yyxxxxxx   11110uuu      10uuzzzz       10yyyyyy      10xxxxxx
-		*out = static_cast<std::uint8_t>(0b1111'0000u | (0b0000'0111u & (cp>>18)));  // uuu
-		++out;
-		*out = static_cast<std::uint8_t>(0b1000'0000u | (0b0011'1111u & (cp>>12)));  // uu'zzzz
-		++out;
-		*out = static_cast<std::uint8_t>(0b1000'0000u | (0b0011'1111u & (cp>>6)));
-		++out;
-		*out = static_cast<std::uint8_t>(0b1000'0000u | (0b0011'1111u & cp));
-		++out;
+// TODO:  These things should take codepoints, not the underlying int types
+// TODO:  Endianness
+
+
+// For a given codepoint, generates in order the bytes in the utf8 representation
+class utf8_generator {
+public:
+	utf8_generator()=delete;
+	utf8_generator(codepoint) noexcept;
+
+	bool is_finished() const noexcept;
+	std::uint8_t get() const noexcept;
+	bool go_next() noexcept;
+	void reset() noexcept;
+
+	// Unrolls the loop that the user would normally have to write
+	// TODO:  Constrain
+	template<typename OIt>
+	OIt get_all(OIt out) const {
+		if (m_sz == 1) {
+			*out++ = m_u8[0];
+		} else if (m_sz == 2) {
+			*out++ = m_u8[0];
+			*out++ = m_u8[1];
+		} else if (m_sz == 3) {
+			*out++ = m_u8[0];
+			*out++ = m_u8[1];
+			*out++ = m_u8[2];
+		} else { //if (m_sz == 4)
+			*out++ = m_u8[0];
+			*out++ = m_u8[1];
+			*out++ = m_u8[2];
+			*out++ = m_u8[3];
+		}
+		return out;
 	}
 
+private:
+	std::array<std::uint8_t,4> m_u8;
+	std::int16_t m_sz;
+	std::int16_t m_curr_idx;
+};
+
+
+template<typename OIt>
+OIt to_utf8(std::uint32_t cp, OIt out) {
+	std::optional<codepoint> ocp = codepoint::to_codepoint(cp);
+	if (!ocp) {
+		return out;
+	}
+	utf8_generator g(*ocp);
+	out = g.get_all(out);
 	return out;
 }
+
+
+// For a given codepoint, generates in order the bytes in the utf16 representation
+class utf16_generator {
+public:
+	utf16_generator()=delete;
+	utf16_generator(codepoint) noexcept;
+
+	bool is_finished() const noexcept;
+	std::uint16_t get() const noexcept;
+	bool go_next() noexcept;
+	void reset() noexcept;
+
+	// Unrolls the loop that the user would normally have to write
+	// TODO:  Constrain
+	template<typename OIt>
+	OIt get_all(OIt out) const {
+		if (m_sz == 1) {
+			*out++ = m_u16[0];
+		} else { // if (m_sz == 2)
+			*out++ = m_u16[0];
+			*out++ = m_u16[1];
+		}
+		return out;
+	}
+
+private:
+	std::array<std::uint16_t,2> m_u16;
+	std::int16_t m_sz;
+	std::int16_t m_curr_idx;
+};
 
 
 // Undefined if cp is not a valid codepoint
 template<typename OIt>
 OIt to_utf16(std::uint32_t cp, OIt out) {
-	// #Table 3-5. UTF-16 Bit Distribution
-	// Scalar Value                UTF-16
-	// xxxxxxxxxxxxxxxx            xxxxxxxxxxxxxxxx
-	// 000uuuuuxxxxxxxxxxxxxxxx    110110wwwwxxxxxx 110111xxxxxxxxxx
-	int sz = size_utf16_code_unit_seq_from_codepoint(cp);
-	if (sz == 1) {
-		*out = static_cast<std::uint16_t>(cp);
-		++out;
-	} else if (sz == 2) {
-		std::uint16_t wwww = (cp>>16)-1;
-		std::uint16_t xxxxxx = (cp>>10)&0b111111u;
-		*out = static_cast<std::uint16_t>((0b110110u<<10) | (wwww<<6) | xxxxxx);
-		++out;
-		std::uint16_t xxxxxxxxxx = cp&0b1111111111u;
-		*out = static_cast<std::uint16_t>((0b110111u<<10) | xxxxxxxxxx);
-		++out;
+	std::optional<codepoint> ocp = codepoint::to_codepoint(cp);
+	if (!ocp) {
+		return out;
 	}
-
+	utf16_generator g(*ocp);
+	out = g.get_all(out);
 	return out;
 }
 

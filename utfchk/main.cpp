@@ -252,33 +252,54 @@ random_all_encodings random_codepoints_all_formats_to_files(std::filesystem::pat
 	return random_all_encodings {std::move(ru32), std::move(ru16), std::move(ru8)};
 }
 
-std::string u32_to_string(std::span<const std::uint32_t> u32) {
+std::string u32_to_string(std::span<const std::uint32_t> u32, int max_cpl) {
 	std::string s;
 	s.reserve(u32.size());
+	int curr_cpl {0};
 	for (const std::uint32_t dw : u32) {
+		constexpr int cpe = 10;  // chars per entry
 		s += std::format("{:#08X}u, ", dw);
+		curr_cpl += cpe;
+		if (curr_cpl > (max_cpl-cpe)) {
+			curr_cpl = 0;
+			s.back() = '\n';  // replaces the ' ' after the  ','
+		}
 	}
 	std::replace(s.begin(),s.end(),'X','x');
 	s += std::format("\n");
 	return s;
 }
 
-std::string u16_to_string(std::span<const std::uint16_t> u16) {
+std::string u16_to_string(std::span<const std::uint16_t> u16, int max_cpl) {
 	std::string s;
 	s.reserve(u16.size());
+	int curr_cpl {0};
 	for (const std::uint16_t w : u16) {
+		constexpr int cpe = 8;  // chars per entry
 		s += std::format("{:#06X}u, ", w);
+		curr_cpl += cpe;
+		if (curr_cpl > (max_cpl-cpe)) {
+			curr_cpl = 0;
+			s.back() = '\n';  // replaces the ' ' after the  ','
+		}
 	}
 	std::replace(s.begin(),s.end(),'X','x');
 	s += std::format("\n");
 	return s;
 }
 
-std::string u8_to_string(std::span<const std::uint8_t> u8) {
+std::string u8_to_string(std::span<const std::uint8_t> u8, int max_cpl) {
 	std::string s;
 	s.reserve(u8.size());
+	int curr_cpl {0};
 	for (const std::uint8_t b : u8) {
+		constexpr int cpe = 6;  // chars per entry
 		s += std::format("{:#04X}u, ", b);
+		curr_cpl += cpe;
+		if (curr_cpl > (max_cpl-cpe)) {
+			curr_cpl = 0;
+			s.back() = '\n';  // replaces the ' ' after the  ','
+		}
 	}
 	std::replace(s.begin(),s.end(),'X','x');
 	s += std::format("\n");
@@ -317,10 +338,10 @@ int main(int argc, char* argv[]) {
 	}*/
 
 	{
-		random_all_encodings rcps = random_codepoints_all_formats_to_files("D:\\dev\\utflib\\rcps.txt", 5, 5);
-		std::cout << u32_to_string(rcps.u32) << "\n\n";
-		std::cout << u16_to_string(rcps.u16) << "\n\n";
-		std::cout << u8_to_string(rcps.u8) << "\n\n";
+		random_all_encodings rcps = random_codepoints_all_formats_to_files("D:\\dev\\utflib\\rcps.txt", 500, 20);
+		std::cout << u32_to_string(rcps.u32, 90) << "\n\n";
+		std::cout << u16_to_string(rcps.u16, 90) << "\n\n";
+		std::cout << u8_to_string(rcps.u8, 90) << "\n\n";
 		std::cout << std::endl;
 		std::cout << std::endl;
 	}

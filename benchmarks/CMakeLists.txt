@@ -3,7 +3,7 @@ project(test VERSION 1.0 DESCRIPTION "Benchmarks for utflib" LANGUAGES CXX)
 
 # Add source to this project's executable.
 add_executable(benchmarks
-	main.cpp "u8.cpp" "benchmark_data.h" "behcnmark_data.cpp")
+	main.cpp "u8_iterators.cpp" "benchmark_data.h" "behcnmark_data.cpp" "u8_encoding.cpp")
 
 set_target_properties(benchmarks PROPERTIES
     CXX_STANDARD 20
