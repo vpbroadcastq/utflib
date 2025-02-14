@@ -338,7 +338,7 @@ int main(int argc, char* argv[]) {
 	}*/
 
 	{
-		random_all_encodings rcps = random_codepoints_all_formats_to_files("D:\\dev\\utflib\\rcps.txt", 500, 20);
+		random_all_encodings rcps = random_codepoints_all_formats_to_files("D:\\dev\\utflib\\data\\rcps.txt", 500, 20);
 		std::cout << u32_to_string(rcps.u32, 90) << "\n\n";
 		std::cout << u16_to_string(rcps.u16, 90) << "\n\n";
 		std::cout << u8_to_string(rcps.u8, 90) << "\n\n";
