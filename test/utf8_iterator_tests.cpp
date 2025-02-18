@@ -10,6 +10,16 @@
 //
 // utf-8 iterator
 //
+TEST(utf8_iterator_default_constructed, getters_and_go_methods) {
+	utf8_iterator it {};
+	EXPECT_TRUE(it.is_finished());
+	EXPECT_TRUE(it.at_start());
+	EXPECT_FALSE(it.get_utf8().has_value());
+	EXPECT_FALSE(it.get_codepoint().has_value());
+	EXPECT_FALSE(it.go_next());
+	EXPECT_FALSE(it.go_prev());
+}
+
 TEST(utf8_iterator_empty_sequence, getters_and_go_methods) {
 	std::span<std::uint8_t> td {};
 	utf8_iterator it(td);

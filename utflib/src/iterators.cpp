@@ -113,6 +113,36 @@ std::span<const std::uint8_t> utf8_iterator::get_underlying() const {
 	return next_valid;
 }
 
+std::optional<codepoint> utf8_iterator::operator*() const {
+	return get_codepoint();
+}
+
+utf8_iterator& utf8_iterator::operator++() {
+	go_next();
+	return *this;
+}
+
+utf8_iterator utf8_iterator::operator++(int) {
+	utf8_iterator copy = *this;
+	go_next();
+	return copy;
+}
+
+utf8_iterator& utf8_iterator::operator--() {
+	go_prev();
+	return *this;
+}
+
+utf8_iterator utf8_iterator::operator--(int) {
+	utf8_iterator copy = *this;
+	go_prev();
+	return copy;
+}
+
+// TODO:  Note how I'm only comparing all three pointers and not just m_p... correct?
+bool utf8_iterator::operator==(const utf8_iterator& lhs) const {
+	return m_pbeg==lhs.m_pbeg && m_p==lhs.m_p && m_pend==lhs.m_pend;
+}
 
 //
 // utf8_iterator_alt

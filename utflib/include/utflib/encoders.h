@@ -10,10 +10,11 @@
 
 // TODO:  These things should take codepoints, not the underlying int types
 // TODO:  Endianness
+// TODO:  Replace get() w/ get_all()
 
 // Notes:  -.get_all() is safer b/c it will always write out all the code units.  Users using .get() with a
 //           manual loop have to be careful to run the loop until .is_finished()
-//         -"Generators" is not a good name?  These are really value-semantic representations of utfBlah
+//         -"Generators" is not a good name?  These are really value-semantic representations of utfN
 //          codepoints; they are the value versions of the "views" in utflib.h (utf8_codepoint,
 //          utf16_codepoint, etc).  They have an implicit endianness.
 

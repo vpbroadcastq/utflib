@@ -2,19 +2,26 @@
 #include "utflib.h"
 #include <cstdint>
 #include <span>
+#include <iterator>
+#include <optional>
 
 // Notes
 // These iterators are constructed with the underlying range and know their start&end points; they do
 // not need to be compared with some external sentinel to determine when iteration is finished.  Not
 // sure how you would implement a design like that with variable-length data, at least if there needs
-// to be error handling.
+// to be error handling...  Actually it could be easialy done.  The user creates a one-past-the-end
+// iterator @ p_end; just need an operator==.
+
+// TODO:  Endianness
 
 // Treats all ill-formed subsequences, no matter how long, and no matter their contents, as single errors
 // TODO:  Behavior of the getters is probably not right when is_finished() or when m_p is on the last
 //        valid subsequence but there is a trailing invalid subsequence.
 class utf8_iterator {
 public:
-	utf8_iterator()=delete;
+	using difference_type = std::ptrdiff_t;
+    using value_type = std::optional<codepoint>;
+	utf8_iterator()=default;
 	explicit utf8_iterator(std::span<const std::uint8_t>);
 
 	bool is_finished() const;
@@ -29,11 +36,21 @@ public:
 	// This is the only getter the iterator "should" expose but since it has to compute the valid
 	// code unit subsequence anyway it is effecient for it to also offer get_utf8().
 	std::span<const std::uint8_t> get_underlying() const;
+
+	// The standard C++ iterator operations for use with a sentinel indicating the end of the range.
+	// TODO: Should these ++ & -- operations carry the iterator beyond its range?  No, obviously?
+	std::optional<codepoint> operator*() const;
+	utf8_iterator& operator++();
+	utf8_iterator operator++(int);
+	utf8_iterator& operator--();
+	utf8_iterator operator--(int);
+	bool operator==(const utf8_iterator&) const;
 private:
 	const std::uint8_t* m_p {};
 	const std::uint8_t* m_pbeg {};
 	const std::uint8_t* m_pend {};
 };
+static_assert(std::bidirectional_iterator<utf8_iterator>);
 
 
 // "Only when a sequence of two or three bytes is a truncated version of a sequence which is
