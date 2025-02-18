@@ -11,8 +11,9 @@
 // sure how you would implement a design like that with variable-length data, at least if there needs
 // to be error handling...  Actually it could be easialy done.  The user creates a one-past-the-end
 // iterator @ p_end; just need an operator==.
+// TODO:  See std::default_sentinel_t - some iterators _do_ know their ranges
 
-// TODO:  Endianness
+// TODO:  Endianness:  utf32 & 16 need BE & LE variants
 
 // Treats all ill-formed subsequences, no matter how long, and no matter their contents, as single errors
 // TODO:  Behavior of the getters is probably not right when is_finished() or when m_p is on the last

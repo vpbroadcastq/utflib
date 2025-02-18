@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(utflib VERSION 1.0 DESCRIPTION "UTF processing library" LANGUAGES NONE)
 
 # Create library from SOURCE_FILES
-add_library(utflib STATIC "src/utflib.cpp" "include/utflib/low_level.h" "include/utflib/utflib.h" "src/low_level.cpp" "include/utflib/iterators.h" "src/iterators.cpp" "include/utflib/encoders.h" "src/encoders.cpp" )
+add_library(utflib STATIC "src/utflib.cpp" "include/utflib/low_level.h" "include/utflib/utflib.h" "src/low_level.cpp" "include/utflib/iterators.h" "src/iterators.cpp" "include/utflib/encoders.h" "src/encoders.cpp"  "include/utflib/byte_manip.h")
 
 set_target_properties(utflib PROPERTIES
     CXX_STANDARD 20
