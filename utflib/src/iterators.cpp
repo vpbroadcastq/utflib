@@ -647,9 +647,9 @@ std::optional<codepoint> utf32_iterator_swapping::get_codepoint() const {
 	return std::nullopt;
 }
 
-std::optional<utf32_codepoint> utf32_iterator_swapping::get_utf32() const {
+std::optional<utf32_codepoint_swapped> utf32_iterator_swapping::get_utf32() const {
 	if (!is_finished() && is_valid_utf32_codepoint(reverse_bytes(*m_p))) {
-		return utf32_codepoint(std::span<const std::uint32_t>{m_p,m_p+1});
+		return utf32_codepoint_swapped(std::span<const std::uint32_t>{m_p,m_p+1});
 	}
 	return std::nullopt;
 }

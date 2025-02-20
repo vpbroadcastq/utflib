@@ -128,7 +128,7 @@ TEST(utf32_iterator_swapping_forward, valid) {
 		std::size_t idx {0};
 		while (!it.is_finished()) {
 			std::optional<codepoint> ocp = it.get_codepoint();
-			std::optional<utf32_codepoint> ou32 = it.get_utf32();
+			std::optional<utf32_codepoint_swapped> ou32 = it.get_utf32();
 			ASSERT_TRUE(ocp.has_value()) << "!ocp.has_value()";
 			ASSERT_TRUE(ou32.has_value()) << "!ou32.has_value()";
 			EXPECT_EQ(ocp->get(), e[idx]);  // Note:  e, not e_swapped
@@ -142,7 +142,7 @@ TEST(utf32_iterator_swapping_forward, valid) {
 	}
 }
 
-/*TEST(utf32_iterator_swapping_backward, valid) {
+TEST(utf32_iterator_swapping_backward, valid) {
 	std::span<std::vector<std::uint32_t>> td = get_valid_utf32_sequences();
 	auto swapped_view = std::ranges::views::transform(reverse_bytes<std::uint32_t>);
 	for (const auto& e : td) {
@@ -157,7 +157,7 @@ TEST(utf32_iterator_swapping_forward, valid) {
 			--idx;
 			ASSERT_TRUE(idx < e_swapped.size());
 			std::optional<codepoint> ocp = it.get_codepoint();
-			std::optional<utf32_codepoint> ou32 = it.get_utf32();
+			std::optional<utf32_codepoint_swapped> ou32 = it.get_utf32();
 			ASSERT_TRUE(ocp.has_value());
 			ASSERT_TRUE(ou32.has_value());
 			EXPECT_EQ(ocp->get(), e[idx]);  // Note:  e, not e_swapped
@@ -167,7 +167,7 @@ TEST(utf32_iterator_swapping_forward, valid) {
 		}
 		EXPECT_TRUE(idx == 0);  // Verify the loop validated all codepoints
 	}
-}*/
+}
 
 
 

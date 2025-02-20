@@ -98,6 +98,34 @@ private:
 };
 
 
+// A non-owning view of a well-formed utf-32 code unit sequence encoding exactly one codepoint
+// TODO:  Templated on the underlying datatype?  Should I allow T's other than std::uint16_t?
+// TODO:  utf32_code_unit_sequence?  utf32_encoded_codepoint?  utf32_view?
+// TODO:  Is this useful?  Since it does ! allow mutation, it takes up more space than the actual
+//        byte sequence encoding the codepoint would.
+class utf32_codepoint_swapped : public std::ranges::view_interface<utf32_codepoint_swapped> {
+public:
+	utf32_codepoint_swapped() = delete;
+	static std::optional<utf32_codepoint_swapped> to_utf32_codepoint_swapped(std::span<const std::uint32_t> s);
+
+	std::span<const std::uint32_t>::iterator begin() const;
+	std::span<const std::uint32_t>::iterator end() const;
+
+	constexpr bool empty() const {
+		return false;
+	}
+
+	friend class utf32_iterator;  // TODO:  Needed?
+	friend class utf32_iterator_swapping;
+	friend class utf32_iterator_alt;  // TODO:  Needed?
+private:
+	utf32_codepoint_swapped(const std::uint32_t*, const std::uint32_t*);
+	explicit utf32_codepoint_swapped(std::span<const std::uint32_t>);
+
+	std::span<const std::uint32_t> m_data;
+};
+
+
 // TODO:  My vocabulary is off:  "Because surrogate code points are not included in the set of Unicode
 // scalar values, UTF-32 code units in the range 0000D80016..0000DFFF16 are ill-formed."  Unpaired
 // surrogates _are_ valid "codepoints."  Also, "In the Unicode Standard, the codespace consists of the
@@ -118,9 +146,11 @@ class codepoint {
 public:
 	// == 0
 	codepoint() = default;
+	// TODO:  Do these make sense?  Maybe the views should know how to extract their own codepoint values
 	explicit codepoint(utf8_codepoint);
 	explicit codepoint(utf16_codepoint);
 	explicit codepoint(utf32_codepoint);
+	explicit codepoint(utf32_codepoint_swapped);
 
 	static std::optional<codepoint> to_codepoint(std::uint32_t val) noexcept;
 

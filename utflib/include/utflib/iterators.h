@@ -182,7 +182,7 @@ public:
 	bool go_prev();  // false if it didn't go anywhere (=>at_start() prior to the call)
 
 	std::optional<codepoint> get_codepoint() const;
-	std::optional<utf32_codepoint> get_utf32() const;
+	std::optional<utf32_codepoint_swapped> get_utf32() const;
 	
 	// This is the only getter the iterator "should" expose but since it has to compute the valid
 	// code unit subsequence anyway it is effecient for it to also offer get_utf8().

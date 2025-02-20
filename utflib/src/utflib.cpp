@@ -1,4 +1,5 @@
 ﻿#include "utflib/utflib.h"
+#include "utflib/byte_manip.h"
 #include "utflib/low_level.h"
 #include <span>
 #include <cstdint>
@@ -81,6 +82,32 @@ std::span<const std::uint32_t>::iterator utf32_codepoint::end() const {
 
 
 //
+// UTF-32 swapped view
+//
+std::optional<utf32_codepoint_swapped> utf32_codepoint_swapped::to_utf32_codepoint_swapped(std::span<const std::uint32_t> s) {
+	if (s.size()==1 && !is_valid_utf32_codepoint(reverse_bytes(s[0]))) {
+		return std::nullopt;
+	}
+	return utf32_codepoint_swapped(s);
+}
+
+utf32_codepoint_swapped::utf32_codepoint_swapped(const std::uint32_t* beg, const std::uint32_t* end) {
+	m_data = std::span {beg, end};
+}
+
+utf32_codepoint_swapped::utf32_codepoint_swapped(std::span<const std::uint32_t> s) : m_data(s) {
+	//...
+}
+
+std::span<const std::uint32_t>::iterator utf32_codepoint_swapped::begin() const {
+	return m_data.begin();
+}
+std::span<const std::uint32_t>::iterator utf32_codepoint_swapped::end() const {
+	return m_data.end();
+}
+
+
+//
 // codepoint value type
 //
 codepoint::codepoint(utf8_codepoint u8) {
@@ -119,6 +146,10 @@ codepoint::codepoint(utf16_codepoint u16) {
 
 codepoint::codepoint(utf32_codepoint u32) {
 	m_val = u32[0];
+}
+
+codepoint::codepoint(utf32_codepoint_swapped u32) {
+	m_val = reverse_bytes(u32[0]);
 }
 
 // Private ctor; unchecked
