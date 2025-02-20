@@ -1,4 +1,5 @@
 #include "utflib/utflib.h"
+#include "utflib/byte_manip.h"
 #include "utflib/iterators.h"
 #include "utflib/low_level.h"
 #include "utflib/encoders.h"
@@ -9,6 +10,42 @@
 #include <format>
 #include <string>
 #include <algorithm>
+#include <limits>
+
+
+std::string codepoints_bytes_reversed() {
+	std::string s;
+	std::vector<std::uint32_t> v;
+	for (std::uint32_t i=0; i<std::numeric_limits<std::uint32_t>::max(); ++i) {
+		v.push_back(reverse_bytes(i));
+	}
+	std::ranges::sort(v);
+
+	bool was_last_valid {false};
+	for (std::uint32_t i=0; i<std::numeric_limits<std::uint32_t>::max(); ++i) {
+		std::uint32_t i_rev = v[i];//reverse_bytes(i);
+		bool is_valid = is_valid_utf32_codepoint_reversed(i_rev);
+		if (is_valid && !was_last_valid) {
+			s += std::to_string(i_rev);
+			s += " VALID... \n";
+		} else if (!is_valid && was_last_valid) {
+			s += std::to_string(i_rev);
+			s += " INVALID... \n";
+		}
+		was_last_valid = is_valid;
+	}
+
+	return s;
+}
+
+std::string fwd_vs_reverse() {
+	std::string s;
+	for (std::uint32_t i=0; i<1000; ++i) {
+		s += std::format("{}, {}\n", i, reverse_bytes(i));
+	}
+	return s;
+}
+
 
 std::string get_random_utf8_sequences() {
 	std::random_device r;
@@ -338,13 +375,18 @@ int main(int argc, char* argv[]) {
 	}*/
 
 	{
+		//std::cout << codepoints_bytes_reversed() << std::endl;
+		//std::cout << fwd_vs_reverse() << std::endl;
+	}
+
+	/*{
 		random_all_encodings rcps = random_codepoints_all_formats_to_files("D:\\dev\\utflib\\data\\rcps.txt", 500, 20);
 		std::cout << u32_to_string(rcps.u32, 90) << "\n\n";
 		std::cout << u16_to_string(rcps.u16, 90) << "\n\n";
 		std::cout << u8_to_string(rcps.u8, 90) << "\n\n";
 		std::cout << std::endl;
 		std::cout << std::endl;
-	}
+	}*/
 
 	//random_utf16_wch2multib();
 	//utf16_iterate_sample();
@@ -365,6 +407,7 @@ int main(int argc, char* argv[]) {
 	bool b = utfchk(s);*/
 
 	//f();
+
 
 	return 0;
 }

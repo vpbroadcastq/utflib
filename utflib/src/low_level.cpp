@@ -1,5 +1,6 @@
 #include "utflib/low_level.h"
 
+#include "utflib/byte_manip.h"
 #include <cstdint>
 #include <span>
 #include <cstdlib>
@@ -361,6 +362,12 @@ bool is_valid_utf16_single_codepoint(std::span<const std::uint16_t> s) {
 bool is_valid_utf32_codepoint(std::uint32_t dw) {
 	return is_valid_cp(dw);
 }
+bool is_valid_utf32_codepoint_reversed(std::uint32_t dw) {
+	//return (dw < reverse_bytes(0xD800u))
+	//	|| (dw>=reverse_bytes(0xE0'00'00u) && dw<=reverse_bytes(0x10FFFFu));
+	return is_valid_cp(reverse_bytes(dw));
+}
+
 
 // The size of the span is always 1 or 0 (if there is nothing valid on the input range)
 std::span<const std::uint32_t> seek_to_first_valid_utf32_sequence(std::span<const std::uint32_t> s) {
@@ -368,6 +375,19 @@ std::span<const std::uint32_t> seek_to_first_valid_utf32_sequence(std::span<cons
 	const std::uint32_t const* p_end = s.data()+s.size();
 	while (p != p_end) {
 		if (is_valid_utf32_codepoint(*p)) {
+			return {p,p+1};
+		}
+		++p;
+	}
+	return {p_end, p_end};
+}
+
+// The size of the span is always 1 or 0 (if there is nothing valid on the input range)
+std::span<const std::uint32_t> seek_to_first_valid_utf32_sequence_reversed(std::span<const std::uint32_t> s) {
+	const std::uint32_t* p = s.data();
+	const std::uint32_t const* p_end = s.data()+s.size();
+	while (p != p_end) {
+		if (is_valid_utf32_codepoint_reversed(*p)) {
 			return {p,p+1};
 		}
 		++p;

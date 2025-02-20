@@ -1,10 +1,12 @@
 #pragma once
 #include <cstddef>
 #include <cstdint>
+#include <type_traits>
+#include <concepts>
 
 
-// TODO:  Constrain?
-template<typename T>
+// Clang turns this in to a single bswap; GCC and MSVC don't.  C++23 has std::byteswap.
+template<std::integral T>
 constexpr T reverse_bytes(const T val) {
 	if constexpr (sizeof(T) == 0) {
 		return val;
@@ -22,3 +24,6 @@ constexpr T reverse_bytes(const T val) {
 	}
 	return result;
 }
+
+
+

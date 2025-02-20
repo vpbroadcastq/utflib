@@ -140,11 +140,13 @@ bool is_valid_utf16_single_codepoint(std::span<const std::uint16_t> s);
 // UTF-32 code units in the range 0000D80016..0000DFFF16 are ill-formed.
 // TODO:  Do i really need this?  See is_valid_cp
 bool is_valid_utf32_codepoint(std::uint32_t dw);
+bool is_valid_utf32_codepoint_reversed(std::uint32_t dw);
 
 // The size of the span is always 1 or 0 (if there is nothing valid on the input range)
 // This really only exists for consistency with the api for the other encoding forms
+// TODO:  These are just linear search with a different function to indicate when the thing is found
 std::span<const std::uint32_t> seek_to_first_valid_utf32_sequence(std::span<const std::uint32_t> s);
-
+std::span<const std::uint32_t> seek_to_first_valid_utf32_sequence_reversed(std::span<const std::uint32_t> s);
 
 
 void expect(bool, const char* = nullptr);
