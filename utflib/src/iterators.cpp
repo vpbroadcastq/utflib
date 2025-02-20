@@ -1,5 +1,6 @@
 #include "utflib/iterators.h"
 
+#include "utflib/byte_manip.h"
 #include "utflib/low_level.h"
 #include <span>
 #include <cstdint>
@@ -564,6 +565,108 @@ std::span<const std::uint32_t> utf32_iterator::get_underlying() const {
 	// m_p is at the start of an invalid sequence
 	return seek_to_first_valid_utf32_sequence({m_p, m_pend});
 }
+
+
+
+//
+// utf32_iterator_swapping
+//
+utf32_iterator_swapping::utf32_iterator_swapping(std::span<const std::uint32_t> s) {
+	m_p = s.data();
+	m_pbeg = s.data();
+	m_pend = s.data() + s.size();
+}
+
+bool utf32_iterator_swapping::is_finished() const {
+	return m_p == m_pend;
+}
+
+bool utf32_iterator_swapping::at_start() const {
+	return m_p == m_pbeg;
+}
+
+// false if it didn't go anywhere (=>is_finished() prior to the call)
+// TODO:  Should I use is_valid_utf32_codepoint_reversed?
+bool utf32_iterator_swapping::go_next() {
+	// m_p is pointing at the first dw of a valid code unit sequence (of length 1 because utf-32),
+	// the first dw of an invalid code unit sequence, or at the end.
+	if (is_finished()) {
+		return false;
+	}
+
+	if (is_valid_utf32_codepoint(reverse_bytes(*m_p))) {
+		// Step over the current valid code unit onto whatever comes next (valid or invalid)
+		++m_p;
+	} else {
+		m_p = seek_to_first_valid_utf32_sequence_reversed({m_p,m_pend}).data();
+	}
+	return true;
+}
+
+
+// false if it didn't go anywhere (=>at_start() prior to the call)
+bool utf32_iterator_swapping::go_prev() {
+	if (at_start()) {
+		return false;
+	}
+
+	const std::uint32_t* p = m_p;
+	--p;
+	if (p==m_pbeg) {
+		m_p = p;
+		return true;
+	}
+
+	if (is_valid_utf32_codepoint(reverse_bytes(*p))) {
+		m_p = p;
+		return true;
+	} else {
+		// p is invalid and p != m_pbeg
+		while (true) {
+			--p;
+			if (is_valid_utf32_codepoint(reverse_bytes(*p))) {
+				++p;  // Need to point at the first dw of the _invalid_ seq
+				m_p = p;
+				return true;
+			}
+			if (p==m_pbeg) {
+				// p is invalid
+				m_p = p;
+				return true;
+			}
+		}
+	}
+
+	return true;  // Not reached
+}
+
+std::optional<codepoint> utf32_iterator_swapping::get_codepoint() const {
+	if (!is_finished() && is_valid_utf32_codepoint(reverse_bytes(*m_p))) {
+		return codepoint(reverse_bytes(*m_p));
+	}
+	return std::nullopt;
+}
+
+std::optional<utf32_codepoint> utf32_iterator_swapping::get_utf32() const {
+	if (!is_finished() && is_valid_utf32_codepoint(reverse_bytes(*m_p))) {
+		return utf32_codepoint(std::span<const std::uint32_t>{m_p,m_p+1});
+	}
+	return std::nullopt;
+}
+	
+std::span<const std::uint32_t> utf32_iterator_swapping::get_underlying() const {
+	if (is_finished()) {
+		return {m_p, m_pend};
+	}
+
+	if (is_valid_utf32_codepoint(*m_p)) {
+		return {m_p, m_p+1};
+	}
+
+	// m_p is at the start of an invalid sequence
+	return seek_to_first_valid_utf32_sequence_reversed({m_p, m_pend});
+}
+
 
 
 //

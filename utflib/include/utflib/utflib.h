@@ -88,6 +88,7 @@ public:
 	}
 
 	friend class utf32_iterator;
+	friend class utf32_iterator_swapping;
 	friend class utf32_iterator_alt;
 private:
 	utf32_codepoint(const std::uint32_t*, const std::uint32_t*);
@@ -132,6 +133,7 @@ public:
 	friend class utf16_iterator;
 	friend class utf32_iterator_alt;
 	friend class utf32_iterator;
+	friend class utf32_iterator_swapping;
 private:
 	// Private because no validation is performed.  The value must be a valid codepoint.  Users should create
 	// codepoints via the static member to_codepoint(T).

@@ -14,6 +14,15 @@
 // TODO:  See std::default_sentinel_t - some iterators _do_ know their ranges
 
 // TODO:  Endianness:  utf32 & 16 need BE & LE variants
+// Would you ever want to work with BE data on an LE system, or would you just convert when reading in
+// and writing out?  Problem is you may not know the encoding and may need to inspect the data before
+// knowing you need to swap the bytes.
+// You need two iterators: a "normal" one and a byte-swapping one.  On an LE machine, if the normal one
+// works, you know the encoding is LE.  On an LE machine, if the normal one does not but the 
+// byte-swapping one does, you know the encoding is BE.  You don't need explicit BE/LE variants of each 
+// iterator; just a "normal" one and a swapping one.  Then, define type aliases to each of these based
+// on the endianness of the target where the aliases carry _BE/_LE suffixes.
+// The same thing needs to be done with the "view" classes utf16_codepoint, utf32_codepoint :/.
 
 // Treats all ill-formed subsequences, no matter how long, and no matter their contents, as single errors
 // TODO:  Behavior of the getters is probably not right when is_finished() or when m_p is on the last
@@ -141,6 +150,30 @@ class utf32_iterator {
 public:
 	utf32_iterator()=delete;
 	explicit utf32_iterator(std::span<const std::uint32_t>);
+
+	bool is_finished() const;
+	bool at_start() const;
+
+	bool go_next();  // false if it didn't go anywhere (=>is_finished() prior to the call)
+	bool go_prev();  // false if it didn't go anywhere (=>at_start() prior to the call)
+
+	std::optional<codepoint> get_codepoint() const;
+	std::optional<utf32_codepoint> get_utf32() const;
+	
+	// This is the only getter the iterator "should" expose but since it has to compute the valid
+	// code unit subsequence anyway it is effecient for it to also offer get_utf8().
+	std::span<const std::uint32_t> get_underlying() const;
+private:
+	const std::uint32_t* m_p {};
+	const std::uint32_t* m_pbeg {};
+	const std::uint32_t* m_pend {};
+};
+
+// Treats all ill-formed subsequences, no matter how long, and no matter their contents, as single errors
+class utf32_iterator_swapping {
+public:
+	utf32_iterator_swapping()=delete;
+	explicit utf32_iterator_swapping(std::span<const std::uint32_t>);
 
 	bool is_finished() const;
 	bool at_start() const;
