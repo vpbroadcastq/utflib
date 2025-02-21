@@ -668,7 +668,6 @@ std::span<const std::uint32_t> utf32_iterator_swapping::get_underlying() const {
 }
 
 
-
 //
 // utf32_iterator_alt
 //
@@ -734,4 +733,66 @@ std::span<const std::uint32_t> utf32_iterator_alt::get_underlying() const {
 }
 
 
+//
+// utf32_iterator_alt_swapping
+//
+utf32_iterator_alt_swapping::utf32_iterator_alt_swapping(std::span<const std::uint32_t> s) {
+	m_p = s.data();
+	m_pbeg = s.data();
+	m_pend = s.data() + s.size();
+}
+
+bool utf32_iterator_alt_swapping::is_finished() const {
+	return m_p == m_pend;
+}
+
+bool utf32_iterator_alt_swapping::at_start() const {
+	return m_p == m_pbeg;
+}
+
+// false if it didn't go anywhere (=>is_finished() prior to the call)
+bool utf32_iterator_alt_swapping::go_next() {
+	// m_p is pointing at the first dw of a valid code unit sequence (of length 1 because utf-32),
+	// the first dw of an invalid code unit sequence, or at the end.
+	if (is_finished()) {
+		return false;
+	}
+
+	++m_p;
+
+	return true;
+}
+
+// false if it didn't go anywhere (=>at_start() prior to the call)
+bool utf32_iterator_alt_swapping::go_prev() {
+	if (at_start()) {
+		return false;
+	}
+
+	--m_p;
+
+	return true;
+}
+
+std::optional<codepoint> utf32_iterator_alt_swapping::get_codepoint() const {
+	if (!is_finished() && is_valid_utf32_codepoint(reverse_bytes(*m_p))) {
+		return codepoint(reverse_bytes(*m_p));
+	}
+	return std::nullopt;
+}
+
+std::optional<utf32_codepoint_swapped> utf32_iterator_alt_swapping::get_utf32() const {
+	if (!is_finished() && is_valid_utf32_codepoint(reverse_bytes(*m_p))) {
+		return utf32_codepoint_swapped(std::span<const std::uint32_t>{m_p,m_p+1});
+	}
+	return std::nullopt;
+}
+	
+std::span<const std::uint32_t> utf32_iterator_alt_swapping::get_underlying() const {
+	if (is_finished()) {
+		return {m_p, m_pend};
+	}
+
+	return {m_p, m_p+1};
+}
 

@@ -219,3 +219,28 @@ private:
 };
 
 
+// Every word not part of a valid code unit sequence is treated as an indivdual error
+class utf32_iterator_alt_swapping {
+public:
+	utf32_iterator_alt_swapping()=delete;
+	explicit utf32_iterator_alt_swapping(std::span<const std::uint32_t>);
+
+	bool is_finished() const;
+	bool at_start() const;
+
+	bool go_next();  // false if it didn't go anywhere (=>is_finished() prior to the call)
+	bool go_prev();  // false if it didn't go anywhere (=>at_start() prior to the call)
+
+	std::optional<codepoint> get_codepoint() const;
+	std::optional<utf32_codepoint_swapped> get_utf32() const;
+	
+	// This is the only getter the iterator "should" expose but since it has to compute the valid
+	// code unit subsequence anyway it is effecient for it to also offer get_utf8().
+	std::span<const std::uint32_t> get_underlying() const;
+private:
+	const std::uint32_t* m_p {};
+	const std::uint32_t* m_pbeg {};
+	const std::uint32_t* m_pend {};
+};
+
+

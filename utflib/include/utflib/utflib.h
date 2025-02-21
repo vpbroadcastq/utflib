@@ -7,6 +7,8 @@
 #include <ranges>
 
 
+// TODO:  Detect encoding
+
 // A non-owning view of a well-formed utf8 code unit sequence encoding exactly one codepoint
 // TODO:  Templated on the underlying datatype?  Should I allow T's other than std::uint8_t?
 // TODO:  utf8_code_unit_sequence?  utf8_encoded_codepoint?  utf8_view?
@@ -118,6 +120,7 @@ public:
 	friend class utf32_iterator;  // TODO:  Needed?
 	friend class utf32_iterator_swapping;
 	friend class utf32_iterator_alt;  // TODO:  Needed?
+	friend class utf32_iterator_alt_swapping;
 private:
 	utf32_codepoint_swapped(const std::uint32_t*, const std::uint32_t*);
 	explicit utf32_codepoint_swapped(std::span<const std::uint32_t>);
@@ -164,6 +167,7 @@ public:
 	friend class utf32_iterator_alt;
 	friend class utf32_iterator;
 	friend class utf32_iterator_swapping;
+	friend class utf32_iterator_alt_swapping;
 private:
 	// Private because no validation is performed.  The value must be a valid codepoint.  Users should create
 	// codepoints via the static member to_codepoint(T).
