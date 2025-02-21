@@ -7,6 +7,8 @@
 #include <ranges>
 
 
+// TODO:  Detect encoding
+
 // A non-owning view of a well-formed utf8 code unit sequence encoding exactly one codepoint
 // TODO:  Templated on the underlying datatype?  Should I allow T's other than std::uint8_t?
 // TODO:  utf8_code_unit_sequence?  utf8_encoded_codepoint?  utf8_view?
@@ -88,10 +90,40 @@ public:
 	}
 
 	friend class utf32_iterator;
+	friend class utf32_iterator_swapping;
 	friend class utf32_iterator_alt;
 private:
 	utf32_codepoint(const std::uint32_t*, const std::uint32_t*);
 	explicit utf32_codepoint(std::span<const std::uint32_t>);
+
+	std::span<const std::uint32_t> m_data;
+};
+
+
+// A non-owning view of a well-formed utf-32 code unit sequence encoding exactly one codepoint
+// TODO:  Templated on the underlying datatype?  Should I allow T's other than std::uint16_t?
+// TODO:  utf32_code_unit_sequence?  utf32_encoded_codepoint?  utf32_view?
+// TODO:  Is this useful?  Since it does ! allow mutation, it takes up more space than the actual
+//        byte sequence encoding the codepoint would.
+class utf32_codepoint_swapped : public std::ranges::view_interface<utf32_codepoint_swapped> {
+public:
+	utf32_codepoint_swapped() = delete;
+	static std::optional<utf32_codepoint_swapped> to_utf32_codepoint_swapped(std::span<const std::uint32_t> s);
+
+	std::span<const std::uint32_t>::iterator begin() const;
+	std::span<const std::uint32_t>::iterator end() const;
+
+	constexpr bool empty() const {
+		return false;
+	}
+
+	friend class utf32_iterator;  // TODO:  Needed?
+	friend class utf32_iterator_swapping;
+	friend class utf32_iterator_alt;  // TODO:  Needed?
+	friend class utf32_iterator_alt_swapping;
+private:
+	utf32_codepoint_swapped(const std::uint32_t*, const std::uint32_t*);
+	explicit utf32_codepoint_swapped(std::span<const std::uint32_t>);
 
 	std::span<const std::uint32_t> m_data;
 };
@@ -117,9 +149,11 @@ class codepoint {
 public:
 	// == 0
 	codepoint() = default;
+	// TODO:  Do these make sense?  Maybe the views should know how to extract their own codepoint values
 	explicit codepoint(utf8_codepoint);
 	explicit codepoint(utf16_codepoint);
 	explicit codepoint(utf32_codepoint);
+	explicit codepoint(utf32_codepoint_swapped);
 
 	static std::optional<codepoint> to_codepoint(std::uint32_t val) noexcept;
 
@@ -132,6 +166,8 @@ public:
 	friend class utf16_iterator;
 	friend class utf32_iterator_alt;
 	friend class utf32_iterator;
+	friend class utf32_iterator_swapping;
+	friend class utf32_iterator_alt_swapping;
 private:
 	// Private because no validation is performed.  The value must be a valid codepoint.  Users should create
 	// codepoints via the static member to_codepoint(T).
