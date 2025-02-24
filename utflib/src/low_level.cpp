@@ -372,7 +372,7 @@ bool is_valid_utf32_codepoint_reversed(std::uint32_t dw) {
 // The size of the span is always 1 or 0 (if there is nothing valid on the input range)
 std::span<const std::uint32_t> seek_to_first_valid_utf32_sequence(std::span<const std::uint32_t> s) {
 	const std::uint32_t* p = s.data();
-	const std::uint32_t const* p_end = s.data()+s.size();
+	const std::uint32_t* const p_end = s.data()+s.size();
 	while (p != p_end) {
 		if (is_valid_utf32_codepoint(*p)) {
 			return {p,p+1};
@@ -385,7 +385,7 @@ std::span<const std::uint32_t> seek_to_first_valid_utf32_sequence(std::span<cons
 // The size of the span is always 1 or 0 (if there is nothing valid on the input range)
 std::span<const std::uint32_t> seek_to_first_valid_utf32_sequence_reversed(std::span<const std::uint32_t> s) {
 	const std::uint32_t* p = s.data();
-	const std::uint32_t const* p_end = s.data()+s.size();
+	const std::uint32_t* const  p_end = s.data()+s.size();
 	while (p != p_end) {
 		if (is_valid_utf32_codepoint_reversed(*p)) {
 			return {p,p+1};

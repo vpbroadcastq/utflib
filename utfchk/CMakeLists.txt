@@ -2,11 +2,12 @@
 project(utfchk VERSION 1.0 DESCRIPTION "Simple example application using utflib" LANGUAGES CXX)
 
 # Add source to this project's executable.
-add_executable(utfchk
-	main.cpp
-	utils.cpp
-	test.cpp
-  "wch2mb.cpp")
+set(SOURCES main.cpp utils.cpp test.cpp)
+if(WIN32)
+	list(APPEND SOURCES wch2mb.cpp)
+endif()
+
+add_executable(utfchk ${SOURCES})
 
 set_target_properties(utfchk PROPERTIES
     CXX_STANDARD 20
