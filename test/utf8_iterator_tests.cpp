@@ -118,7 +118,7 @@ TEST(utf8_iterator_to_utf32_backward, invalid) {
 			std::optional<codepoint> ocp = it.get_codepoint();
 			std::optional<utf8_codepoint> ou8 = it.get_utf8();
 			if (ocp) {
-				bool b = ocp->get()==e.utf32[idx_u32];
+				[[maybe_unused]] bool b = ocp->get()==e.utf32[idx_u32];
 				EXPECT_EQ(ocp->get(), e.utf32[idx_u32]);
 				EXPECT_TRUE(ou8.has_value());
 				// Verify that the iterator's utf8 and codepoint getters return the same thing

@@ -38,47 +38,45 @@ bool utf8_iterator::go_prev() {
 	// because you could have a sequence like this: [valid utf8 seq] [error seq] [valid utf8 seq], with
 	// m_p at the start of the second utf8 seq.
 	// While traversing backwards through the error seq and the trailing bytes of the first utf8 seq,
-	// seek_to_first_valid_utf8_sequence() will return the lb of the second utf8 seq until the iterator reaches
+	// seek_to_first_valid_utf8_sequence() will return the lb of the second utf8 seq (m_p) until the iterator reaches
 	// the first byte of the first utf8 seq.  However, go_prev() needs to position the iterator on the first byte
 	// of the error seq to match the reverse of the go_next() behavior.  It needs to seek backwards until it
 	// finds the lb of the next valid seq, and check forward to be sure there is no intervening invalid seq.
+
 	const std::uint8_t* p = m_p;
+	std::span<const std::uint8_t> prev;
 	while (true) {
 		--p;
-		std::span<const std::uint8_t> prev = seek_to_first_valid_utf8_sequence({p,m_p});
-
-		if (p == m_pbeg) {
-			// May or may not be the start of an error seq
-			// Consider |[valid-1][invalid][valid-2] with m_p initially on valid-2.
-			if (prev.data() == m_p) {
-				// p is on the start of an invalid subseq
+		prev = seek_to_first_valid_utf8_sequence({p,m_p});
+		if (p==m_pbeg) {
+			// prev.data()==p || prev.data() > p
+			// If p < prev.data(), the situation is |[invalid][*valid]... (the * designates m_p)
+			// with p now pointing at the start of [invalid] (==m_pbeg) and prev.data() pointing at the start of [valid].
+			if (p!=prev.data()) {
 				m_p = p;
-			} else {
-				// p is on the lb of a valid subseq
-				// The question now is:  Is there an error seq between p and m_p?
-				if (prev.data() + prev.size() == m_p) {
-					// Nope
-					m_p = prev.data();
-				} else {
-					m_p = prev.data() + prev.size();
-				}
+				return true;
 			}
-			return true;
+			// If prev.data()==p, the situation is |[valid][*valid] OR |[valid][invalid][*valid]
+			// with both p and prev.data() pointing at the start of the first [valid].
+			break;
 		}
-
-		if (prev.data() != m_p) {
-			// prev_valid.data() != m_p
-			// prev_valid is on the lb of a valid subseq.
-			// The question now is:  Is there an error seq between pre_valid.data() and m_p?
-			if (prev.data() + prev.size() == m_p) {
-				// Nope
-				m_p = prev.data();
-			} else {
-				m_p = prev.data() + prev.size();
-			}
-			return true;
+		
+		if (prev.data() == p) {
+			// Found a valid sequence beginning at p; p < m_p
+			break;
 		}
 	}
+
+	// prev.data() == p
+	// p, prev point at a valid sequence, but it is not necessarily the case that p+prev.size()==m_p
+	if (p+prev.size()==m_p) {
+		m_p = p;
+		return true;
+	}
+	// Intervening invalid subsequence
+	p += prev.size();  // p -> start of the invalid subseq
+	m_p = p;
+	return true;
 }
 
 bool utf8_iterator::is_finished() const {
@@ -301,44 +299,51 @@ bool utf16_iterator::go_next() {
 
 // false if it didn't go anywhere (=>at_start() prior to the call)
 bool utf16_iterator::go_prev() {
-	if (m_p == m_pbeg) {
+	if (at_start()) {
 		return false;
 	}
+	// It won't work to seek backward until the first byte for which seek_to_first_valid_utf16_sequence() != m_p,
+	// because you could have a sequence like this: [valid seq] [error seq] [valid seq], with m_p at the start
+	// of the second utf8 seq.
+	// While traversing backwards through the error seq and the trailing words of the first utf16 seq,
+	// seek_to_first_valid_utf16_sequence() will return the lb of the second utf16 seq (m_p) until the iterator reaches
+	// the first byte of the first utf16 seq.  However, go_prev() needs to position the iterator on the first byte
+	// of the error seq to match the reverse of the go_next() behavior.  It needs to seek backwards until it
+	// finds the lb of the next valid seq, and check forward to be sure there is no intervening invalid seq.
 
-	// Seek backwards to the next valid codepoint and then advance past it
 	const std::uint16_t* p = m_p;
+	std::span<const std::uint16_t> prev;
 	while (true) {
 		--p;
-		if (p==m_pbeg) { break; }
-		std::span<const std::uint16_t> s = seek_to_first_valid_utf16_sequence({p,m_pend});
-		if (s.data() == m_p) { continue; }
-		// s.data()!= m_p
-		
-		// Below, w means a valid single-word codepoint, s s a valid 2-word codepoint, and i some
-		// sort of invalid subsequence.  * indicates where p and m_p are pointing (p<m_p).
-		// (a) w* i i i i w*
-		// (b) s* s w*
-		// (c) w* w*
-		// (d) s* s i i i w*
-		// For a,d need to move forward to the first I; for b,c we're done
-		if (p+s.size() == m_p) {
-			// Case b || c
+		prev = seek_to_first_valid_utf16_sequence({p,m_p});
+		if (p==m_pbeg) {
+			// prev.data()==p || prev.data() > p
+			// If p < prev.data(), the situation is |[invalid][*valid]... (the * designates m_p)
+			// with p now pointing at the start of [invalid] (==m_pbeg) and prev.data() pointing at the start of [valid].
+			if (p!=prev.data()) {
+				m_p = p;
+				return true;
+			}
+			// If prev.data()==p, the situation is |[valid][*valid] OR |[valid][invalid][*valid]
+			// with both p and prev.data() pointing at the start of the first [valid].
 			break;
 		}
 		
-		// In state a || d
-		if (is_valid_utf16_codepoint(*p)) {
-			// a
-			++p;
-			break;
-		} else {
-			// b
-			p += 2;
+		if (prev.data() == p) {
+			// Found a valid sequence beginning at p; p < m_p
 			break;
 		}
 	}
-	m_p = p;
 
+	// prev.data() == p
+	// p, prev point at a valid sequence, but it is not necessarily the case that p+prev.size()==m_p
+	if (p+prev.size()==m_p) {
+		m_p = p;
+		return true;
+	}
+	// Intervening invalid subsequence
+	p += prev.size();  // p -> start of the invalid subseq
+	m_p = p;
 	return true;
 }
 
@@ -563,6 +568,7 @@ std::span<const std::uint32_t> utf32_iterator::get_underlying() const {
 	}
 
 	// m_p is at the start of an invalid sequence
+	// TODO:  This is wrong.  Write tests.
 	return seek_to_first_valid_utf32_sequence({m_p, m_pend});
 }
 
