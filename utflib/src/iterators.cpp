@@ -34,51 +34,34 @@ bool utf8_iterator::go_prev() {
 	if (at_start()) {
 		return false;
 	}
-	// It won't work to seek backward until the first byte for which seek_to_first_valid_utf8_sequence() != m_p,
-	// because you could have a sequence like this: [valid utf8 seq] [error seq] [valid utf8 seq], with
-	// m_p at the start of the second utf8 seq.
-	// While traversing backwards through the error seq and the trailing bytes of the first utf8 seq,
-	// seek_to_first_valid_utf8_sequence() will return the lb of the second utf8 seq until the iterator reaches
-	// the first byte of the first utf8 seq.  However, go_prev() needs to position the iterator on the first byte
-	// of the error seq to match the reverse of the go_next() behavior.  It needs to seek backwards until it
-	// finds the lb of the next valid seq, and check forward to be sure there is no intervening invalid seq.
+
 	const std::uint8_t* p = m_p;
+	std::optional<int> sz = std::nullopt;
 	while (true) {
 		--p;
-		std::span<const std::uint8_t> prev = seek_to_first_valid_utf8_sequence({p,m_p});
-
-		if (p == m_pbeg) {
-			// May or may not be the start of an error seq
-			// Consider |[valid-1][invalid][valid-2] with m_p initially on valid-2.
-			if (prev.data() == m_p) {
-				// p is on the start of an invalid subseq
-				m_p = p;
-			} else {
-				// p is on the lb of a valid subseq
-				// The question now is:  Is there an error seq between p and m_p?
-				if (prev.data() + prev.size() == m_p) {
-					// Nope
-					m_p = prev.data();
-				} else {
-					m_p = prev.data() + prev.size();
-				}
-			}
-			return true;
-		}
-
-		if (prev.data() != m_p) {
-			// prev_valid.data() != m_p
-			// prev_valid is on the lb of a valid subseq.
-			// The question now is:  Is there an error seq between pre_valid.data() and m_p?
-			if (prev.data() + prev.size() == m_p) {
-				// Nope
-				m_p = prev.data();
-			} else {
-				m_p = prev.data() + prev.size();
-			}
-			return true;
+		sz = begins_with_valid_utf8({p,m_pend});
+		if (p==m_pbeg || sz) {
+			break;
 		}
 	}
+	// p does not need to move backwards any further.  Either p is on a valid start byte or p is at the beginning
+	// of the sequence.  In either event, p may need to move forward.
+	if (sz) {
+		if (p+*sz == m_p) {
+			// p is on a valid start byte and there is no intervening invalid sequence between the valid sequence
+			// beginning at p and the valid sequence beginning at m_p.
+		} else {
+			// p is on a valid start byte but p + *sz > m_p.  There is an invalid byte sequence between the valid
+			// byte sequence starting at p and the valid byte sequence starting at m_p.  p needs to be moved forward
+			// to the beginning of the invalid byte sequence.
+			p += *sz;
+		}
+	} else {  // !sz
+		// p is on an at the very beginning of the sequence; the sequence begins with an invalid byte sequence.
+	}
+
+	m_p = p;
+	return true;
 }
 
 bool utf8_iterator::is_finished() const {
@@ -301,44 +284,36 @@ bool utf16_iterator::go_next() {
 
 // false if it didn't go anywhere (=>at_start() prior to the call)
 bool utf16_iterator::go_prev() {
-	if (m_p == m_pbeg) {
+	if (at_start()) {
 		return false;
 	}
 
-	// Seek backwards to the next valid codepoint and then advance past it
 	const std::uint16_t* p = m_p;
+	std::optional<int> sz = std::nullopt;
 	while (true) {
 		--p;
-		if (p==m_pbeg) { break; }
-		std::span<const std::uint16_t> s = seek_to_first_valid_utf16_sequence({p,m_pend});
-		if (s.data() == m_p) { continue; }
-		// s.data()!= m_p
-		
-		// Below, w means a valid single-word codepoint, s s a valid 2-word codepoint, and i some
-		// sort of invalid subsequence.  * indicates where p and m_p are pointing (p<m_p).
-		// (a) w* i i i i w*
-		// (b) s* s w*
-		// (c) w* w*
-		// (d) s* s i i i w*
-		// For a,d need to move forward to the first I; for b,c we're done
-		if (p+s.size() == m_p) {
-			// Case b || c
-			break;
-		}
-		
-		// In state a || d
-		if (is_valid_utf16_codepoint(*p)) {
-			// a
-			++p;
-			break;
-		} else {
-			// b
-			p += 2;
+		sz = begins_with_valid_utf16({p,m_pend});
+		if (p==m_pbeg || sz) {
 			break;
 		}
 	}
-	m_p = p;
+	// p does not need to move backwards any further.  Either p is on a valid start word or p is at the beginning
+	// of the sequence.  In either event, p may need to move forward.
+	if (sz) {
+		if (p+*sz == m_p) {
+			// p is on a valid start word and there is no intervening invalid sequence between the valid sequence
+			// beginning at p and the valid sequence beginning at m_p.
+		} else {
+			// p is on a valid start word but p + *sz > m_p.  There is an invalid word sequence between the valid
+			// word sequence starting at p and the valid word sequence starting at m_p.  p needs to be moved forward
+			// to the beginning of the invalid word sequence.
+			p += *sz;
+		}
+	} else {  // !sz
+		// p is on an at the very beginning of the sequence; the sequence begins with an invalid word sequence.
+	}
 
+	m_p = p;
 	return true;
 }
 
@@ -510,33 +485,32 @@ bool utf32_iterator::go_prev() {
 	}
 
 	const std::uint32_t* p = m_p;
-	--p;
-	if (p==m_pbeg) {
-		m_p = p;
-		return true;
-	}
-
-	if (is_valid_utf32_codepoint(*p)) {
-		m_p = p;
-		return true;
-	} else {
-		// p is invalid and p != m_pbeg
-		while (true) {
-			--p;
-			if (is_valid_utf32_codepoint(*p)) {
-				++p;  // Need to point at the first dw of the _invalid_ seq
-				m_p = p;
-				return true;
-			}
-			if (p==m_pbeg) {
-				// p is invalid
-				m_p = p;
-				return true;
-			}
+	std::optional<int> sz = std::nullopt;
+	while (true) {
+		--p;
+		sz = begins_with_valid_utf32({p,m_pend});
+		if (p==m_pbeg || sz) {
+			break;
 		}
 	}
+	// p does not need to move backwards any further.  Either p is on a valid start dword or p is at the beginning
+	// of the sequence.  In either event, p may need to move forward.
+	if (sz) {
+		if (p+*sz == m_p) {
+			// p is on a valid dword and there is no intervening invalid sequence between the valid dword at p and
+			// the valid dword at m_p.
+		} else {
+			// p is on a valid dword but p + *sz > m_p.  There is an invalid dword sequence between the valid
+			// dword starting at p and the valid dword starting at m_p.  p needs to be moved forward to the
+			// beginning of the invalid word sequence.
+			p += *sz;
+		}
+	} else {  // !sz
+		// p is on an at the very beginning of the sequence; the sequence begins with an dword.
+	}
 
-	return true;  // Not reached
+	m_p = p;
+	return true;
 }
 
 std::optional<codepoint> utf32_iterator::get_codepoint() const {
@@ -563,6 +537,7 @@ std::span<const std::uint32_t> utf32_iterator::get_underlying() const {
 	}
 
 	// m_p is at the start of an invalid sequence
+	// TODO:  This is wrong.  Write tests.
 	return seek_to_first_valid_utf32_sequence({m_p, m_pend});
 }
 

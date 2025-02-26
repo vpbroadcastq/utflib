@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <span>
 #include <cstdlib>
+#include <optional>
 
 void expect(bool b, [[maybe_unsed]] const char* msg) {
 	if (b) { return; }
@@ -96,37 +97,39 @@ std::uint8_t payload_utf8_trailing_byte(std::uint8_t b) {
 	return 0x3Fu & b;
 }
 
-bool begins_with_valid_utf8(std::span<const std::uint8_t> s) {
+// TODO:  This still discards information (about which byte was bad)
+std::optional<int> begins_with_valid_utf8(std::span<const std::uint8_t> s) {
 	if (s.size() == 0) {
-		return false;
+		return std::nullopt;
 	}
 	if (!is_valid_utf8_leading_byte(s[0])) {
-		return false;
+		return std::nullopt;
 	}
 	int sz = size_utf8_multibyte_seq_from_leading_byte(s[0]);
 	if(s.size() < sz) {
-		return false;
+		return std::nullopt;
 	}
 	if (sz == 1) {
-		return true;
+		return sz;
 	}
 	if (!is_valid_utf8_second_byte(s[1],s[0])) {
-		return false;
+		return std::nullopt;
 	}
 	if (sz == 2) {
-		return true;
+		return sz;
 	}
 	if (!is_valid_utf8_third_or_fourth_byte(s[2])) {
-		return false;
+		return std::nullopt;
 	}
 	if (sz == 3) {
-		return true;
+		return sz;
 	}
 	if (!is_valid_utf8_third_or_fourth_byte(s[3])) {
-		return false;
+		return std::nullopt;
 	}
-	return true;
+	return sz;
 }
+
 
 bool is_valid_utf8_single_codepoint(std::span<const std::uint8_t> s) {
 	if (s.size() == 0) {
@@ -339,6 +342,26 @@ std::span<const std::uint16_t> seek_to_first_valid_utf16_sequence(std::span<cons
 	return {p_end, p_end};  // Not reachable
 }
 
+std::optional<int> begins_with_valid_utf16(std::span<const std::uint16_t> s) {
+	if (s.size() == 0) {
+		return std::nullopt;
+	}
+	if (is_valid_utf16_codepoint(s[0])) {
+		return 1;
+	}
+	if (!is_valid_utf16_surrogate_pair_leading(s[0])) {
+		return std::nullopt;
+	}
+	// s[0] is a valid leading word of a surrogate pair
+	if (s.size() < 2) {
+		return std::nullopt;
+	}
+	if (is_valid_utf16_surrogate_pair_trailing(s[1])) {
+		return 2;
+	}
+	return std::nullopt;
+}
+
 // s.size()==1 && is_valid_utf16_codepoint(s[0])
 // or
 // s.size()==2 && is_valid_utf16_surrogate_pair(s[0],s[1])
@@ -393,4 +416,14 @@ std::span<const std::uint32_t> seek_to_first_valid_utf32_sequence_reversed(std::
 		++p;
 	}
 	return {p_end, p_end};
+}
+
+std::optional<int> begins_with_valid_utf32(std::span<const std::uint32_t> s) {
+	if (s.size()==0) {
+		return std::nullopt;
+	}
+	if (is_valid_utf32_codepoint(s[0])) {
+		return 1;
+	}
+	return std::nullopt;
 }

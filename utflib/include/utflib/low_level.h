@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <span>
-
+#include <optional>
 
 // Table 3-7. Well-Formed UTF-8 Byte Sequences
 // Code Points          First Byte    Second Byte    Third Byte    Fourth Byte
@@ -70,15 +70,16 @@ leading_byte_ptr_with_size seek_to_first_utf8_leading_byte(std::span<const std::
 // Gets the first valid utf8 byte sequence it finds starting at s.begin()
 std::span<const std::uint8_t> seek_to_first_valid_utf8_sequence(std::span<const std::uint8_t> s);
 
-bool begins_with_valid_utf8(std::span<const std::uint8_t> s);
-// The span must contain exactly one codepoint and s.size()==size_utf8_multibyte_seq_from_codepoint_multibyte_seq_from_leading_byte(s[0])
+// TODO:  Unit tests
+std::optional<int> begins_with_valid_utf8(std::span<const std::uint8_t> s);
+// The span must contain exactly one codepoint and s.size()==size_utf8_multibyte_seq_from_leading_byte(s[0])
 bool is_valid_utf8_single_codepoint(std::span<const std::uint8_t> s);
 
 
 bool is_valid_cp(std::uint32_t cp);
 
 // Undefined if s is not a valid utf8 byte sequence
-// Assumes that s.size() > 0 && s.size() >= size_utf8_multibyte_seq_from_codepoint_multibyte_seq_from_leading_byte(s[0])
+// Assumes that s.size() > 0 && s.size() >= size_utf8_multibyte_seq_from_leading_byte(s[0])
 // TODO:  Rename to to_codepoint?  to_unicode_scalar_value()?
 std::uint32_t to_utf32(std::span<const std::uint8_t> s);
 
@@ -123,6 +124,9 @@ int size_utf16_code_unit_seq_from_codepoint(std::uint32_t);
 // to validate it.
 std::span<const std::uint16_t> seek_to_first_valid_utf16_sequence(std::span<const std::uint16_t> s);
 
+// TODO:  Unit tests
+std::optional<int> begins_with_valid_utf16(std::span<const std::uint16_t> s);
+
 // The span must contain exactly one codepoint:
 // s.size()==1 && is_valid_utf16_codepoint(s[0])
 // or
@@ -148,5 +152,10 @@ bool is_valid_utf32_codepoint_reversed(std::uint32_t dw);
 std::span<const std::uint32_t> seek_to_first_valid_utf32_sequence(std::span<const std::uint32_t> s);
 std::span<const std::uint32_t> seek_to_first_valid_utf32_sequence_reversed(std::span<const std::uint32_t> s);
 
+// This exists for symmetry with the corresponding functions for utf-8 and utf-16.  is_valid_utf32_codepoint()
+// is all that is really needed because the return value (when not nullopt) will always be 1 and there is no
+// need to input a span since utf32 codepoints always have size 1.  One thing this *does* enable though is
+// asking about an empty range.
+std::optional<int> begins_with_valid_utf32(std::span<const std::uint32_t>);
 
 void expect(bool, const char* = nullptr);
