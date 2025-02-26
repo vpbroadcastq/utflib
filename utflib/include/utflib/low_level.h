@@ -71,14 +71,14 @@ leading_byte_ptr_with_size seek_to_first_utf8_leading_byte(std::span<const std::
 std::span<const std::uint8_t> seek_to_first_valid_utf8_sequence(std::span<const std::uint8_t> s);
 
 bool begins_with_valid_utf8(std::span<const std::uint8_t> s);
-// The span must contain exactly one codepoint and s.size()==size_utf8_multibyte_seq_from_codepoint_multibyte_seq_from_leading_byte(s[0])
+// The span must contain exactly one codepoint and s.size()==size_utf8_multibyte_seq_from_leading_byte(s[0])
 bool is_valid_utf8_single_codepoint(std::span<const std::uint8_t> s);
 
 
 bool is_valid_cp(std::uint32_t cp);
 
 // Undefined if s is not a valid utf8 byte sequence
-// Assumes that s.size() > 0 && s.size() >= size_utf8_multibyte_seq_from_codepoint_multibyte_seq_from_leading_byte(s[0])
+// Assumes that s.size() > 0 && s.size() >= size_utf8_multibyte_seq_from_leading_byte(s[0])
 // TODO:  Rename to to_codepoint?  to_unicode_scalar_value()?
 std::uint32_t to_utf32(std::span<const std::uint8_t> s);
 
