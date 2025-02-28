@@ -29,7 +29,9 @@ public:
 		return false;
 	}
 
-	friend class utf8_iterator;
+	template<typename T>
+	friend class utf_iterator;
+	//friend class utf8_iterator;
 	friend class utf8_iterator_alt;
 private:
 	utf8_codepoint(const std::uint8_t*, const std::uint8_t*);
@@ -160,7 +162,9 @@ public:
 	std::uint32_t get() const noexcept;
 
 	friend std::strong_ordering operator<=>(const codepoint&,const codepoint&) = default;
-	friend class utf8_iterator;
+	template<typename T>
+	friend class utf_iterator;
+	//friend class utf8_iterator;
 	friend class utf8_iterator_alt;
 	friend class utf16_iterator_alt;
 	friend class utf16_iterator;

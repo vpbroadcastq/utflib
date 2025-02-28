@@ -1,5 +1,6 @@
 #pragma once
 #include "utflib.h"
+#include "generic_iterator.h"
 #include <cstdint>
 #include <span>
 #include <iterator>
@@ -27,7 +28,7 @@
 // Treats all ill-formed subsequences, no matter how long, and no matter their contents, as single errors
 // TODO:  Behavior of the getters is probably not right when is_finished() or when m_p is on the last
 //        valid subsequence but there is a trailing invalid subsequence.
-class utf8_iterator {
+/*class utf8_iterator {
 public:
 	using difference_type = std::ptrdiff_t;
     using value_type = std::optional<codepoint>;
@@ -60,8 +61,9 @@ private:
 	const std::uint8_t* m_pbeg {};
 	const std::uint8_t* m_pend {};
 };
-static_assert(std::bidirectional_iterator<utf8_iterator>);
+static_assert(std::bidirectional_iterator<utf8_iterator>);*/
 
+using utf8_iterator = utf_iterator<utf8_customizer>;
 
 // "Only when a sequence of two or three bytes is a truncated version of a sequence which is
 // otherwise well-formed to that point, is more than one byte replaced with a single U+FFFD,

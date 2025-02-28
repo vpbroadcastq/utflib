@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <optional>
 
-
+/*
 utf8_iterator::utf8_iterator(std::span<const std::uint8_t> s) {
 	m_pbeg = s.data();
 	m_p = s.data();
@@ -153,6 +153,8 @@ utf8_iterator utf8_iterator::operator--(int) {
 bool utf8_iterator::operator==(const utf8_iterator& lhs) const {
 	return m_pbeg==lhs.m_pbeg && m_p==lhs.m_p && m_pend==lhs.m_pend;
 }
+*/
+
 
 //
 // utf8_iterator_alt
