@@ -14,7 +14,7 @@ TEST(utf8_iterator_default_constructed, getters_and_go_methods) {
 	utf8_iterator it {};
 	EXPECT_TRUE(it.is_finished());
 	EXPECT_TRUE(it.at_start());
-	EXPECT_FALSE(it.get_utf8().has_value());
+	EXPECT_FALSE(it.get().has_value());
 	EXPECT_FALSE(it.get_codepoint().has_value());
 	EXPECT_FALSE(it.go_next());
 	EXPECT_FALSE(it.go_prev());
@@ -25,7 +25,7 @@ TEST(utf8_iterator_empty_sequence, getters_and_go_methods) {
 	utf8_iterator it(td);
 	EXPECT_TRUE(it.is_finished());
 	EXPECT_TRUE(it.at_start());
-	EXPECT_FALSE(it.get_utf8().has_value());
+	EXPECT_FALSE(it.get().has_value());
 	EXPECT_FALSE(it.get_codepoint().has_value());
 	EXPECT_FALSE(it.go_next());
 	EXPECT_FALSE(it.go_prev());
@@ -39,7 +39,7 @@ TEST(utf8_iterator_to_utf32_forward, valid) {
 		while (!it.is_finished()) {
 			ASSERT_TRUE(idx_u32 < e.utf32.size());
 			std::optional<codepoint> ocp = it.get_codepoint();
-			std::optional<utf8_codepoint> ou8 = it.get_utf8();
+			std::optional<utf8_codepoint> ou8 = it.get();
 			bool b = ocp.has_value();
 			ASSERT_TRUE(ocp.has_value());
 			ASSERT_TRUE(ou8.has_value());
@@ -64,7 +64,7 @@ TEST(utf8_iterator_to_utf32_backward, valid) {
 			--idx_u32;
 			ASSERT_TRUE(idx_u32 < e.utf32.size());
 			std::optional<codepoint> ocp = it.get_codepoint();
-			std::optional<utf8_codepoint> ou8 = it.get_utf8();
+			std::optional<utf8_codepoint> ou8 = it.get();
 			ASSERT_TRUE(ocp.has_value());
 			ASSERT_TRUE(ou8.has_value());
 			EXPECT_EQ(ocp->get(), e.utf32[idx_u32]);
@@ -85,7 +85,7 @@ TEST(utf8_iterator_to_utf32_forward, invalid) {
 		while (!it.is_finished()) {
 			ASSERT_TRUE(idx_u32 < e.utf32.size());
 			std::optional<codepoint> ocp = it.get_codepoint();
-			std::optional<utf8_codepoint> ou8 = it.get_utf8();
+			std::optional<utf8_codepoint> ou8 = it.get();
 			if (ocp) {
 				EXPECT_EQ(ocp->get(), e.utf32[idx_u32]);
 				EXPECT_TRUE(ou8.has_value());
@@ -116,7 +116,7 @@ TEST(utf8_iterator_to_utf32_backward, invalid) {
 			--idx_u32;
 			ASSERT_TRUE(idx_u32 < e.utf32.size());
 			std::optional<codepoint> ocp = it.get_codepoint();
-			std::optional<utf8_codepoint> ou8 = it.get_utf8();
+			std::optional<utf8_codepoint> ou8 = it.get();
 			if (ocp) {
 				[[maybe_unused]] bool b = ocp->get()==e.utf32[idx_u32];
 				EXPECT_EQ(ocp->get(), e.utf32[idx_u32]);

@@ -91,7 +91,7 @@ std::optional<codepoint> utf8_iterator::get_codepoint() const {
 	return std::nullopt;
 }
 
-std::optional<utf8_codepoint> utf8_iterator::get_utf8() const {
+std::optional<utf8_codepoint> utf8_iterator::get() const {
 	std::optional<int> sz = begins_with_valid_utf8({m_p,m_pend});
 	if (sz) {
 		return utf8_codepoint(std::span<const std::uint8_t>{m_p,m_p+*sz});
@@ -256,7 +256,7 @@ std::optional<codepoint> utf8_iterator_alt::get_codepoint() const {
 	return codepoint(next_valid);
 }
 
-std::optional<utf8_codepoint> utf8_iterator_alt::get_utf8() const {
+std::optional<utf8_codepoint> utf8_iterator_alt::get() const {
 	std::span<const std::uint8_t> next_valid = seek_to_first_valid_utf8_sequence({m_p,static_cast<std::size_t>(m_pend-m_p)});
 	if (m_p != next_valid.data() || next_valid.size()==0) {
 		return std::nullopt;
@@ -270,7 +270,7 @@ std::span<const std::uint8_t> utf8_iterator_alt::get_underlying() const {
 	return {m_p, it.m_p};
 }
 
-
+/*
 //
 // utf16_iterator
 //
@@ -362,7 +362,7 @@ std::optional<codepoint> utf16_iterator::get_codepoint() const {
 	return std::nullopt;
 }
 
-std::optional<utf16_codepoint> utf16_iterator::get_utf16() const {
+std::optional<utf16_codepoint> utf16_iterator::get() const {
 	std::optional<int> sz = begins_with_valid_utf16({m_p,m_pend});
 	if (sz) {
 		return utf16_codepoint(std::span<const std::uint16_t>{m_p,m_p + *sz});
@@ -392,7 +392,7 @@ std::span<const std::uint16_t> utf16_iterator::get_underlying() const {
 		}
 	}
 	return {m_p,p};
-}
+}*/
 
 
 //
@@ -471,7 +471,7 @@ std::optional<codepoint> utf16_iterator_alt::get_codepoint() const {
 	return codepoint(utf16_to_codepoint_value(next_valid[0],next_valid[1]));
 }
 
-std::optional<utf16_codepoint> utf16_iterator_alt::get_utf16() const {
+std::optional<utf16_codepoint> utf16_iterator_alt::get() const {
 	std::span<const std::uint16_t> next_valid = seek_to_first_valid_utf16_sequence({m_p,m_pend});
 	if (m_p != next_valid.data() || next_valid.size()==0) {
 		return std::nullopt;

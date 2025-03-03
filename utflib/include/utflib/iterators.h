@@ -42,10 +42,10 @@ public:
 	bool go_prev();  // false if it didn't go anywhere (=>at_start() prior to the call)
 
 	std::optional<codepoint> get_codepoint() const;
-	std::optional<utf8_codepoint> get_utf8() const;
+	std::optional<utf8_codepoint> get() const;
 	
 	// This is the only getter the iterator "should" expose but since it has to compute the valid
-	// code unit subsequence anyway it is effecient for it to also offer get_utf8().
+	// code unit subsequence anyway it is effecient for it to also offer get().
 	std::span<const std::uint8_t> get_underlying() const;
 
 	// The standard C++ iterator operations for use with a sentinel indicating the end of the range.
@@ -84,10 +84,10 @@ public:
 	bool go_prev();  // false if it didn't go anywhere (=>at_start() prior to the call)
 
 	std::optional<codepoint> get_codepoint() const;
-	std::optional<utf8_codepoint> get_utf8() const;
+	std::optional<utf8_codepoint> get() const;
 	
 	// This is the only getter the iterator "should" expose but since it has to compute the valid
-	// code unit subsequence anyway it is effecient for it to also offer get_utf8().
+	// code unit subsequence anyway it is effecient for it to also offer get().
 	std::span<const std::uint8_t> get_underlying() const;
 private:
 	const std::uint8_t* m_p {};
@@ -96,6 +96,9 @@ private:
 };
 
 
+using utf16_iterator = utf_iterator<utf16_customizer>;
+
+/*
 // Treats all ill-formed subsequences, no matter how long, and no matter their contents, as single errors
 class utf16_iterator {
 public:
@@ -109,16 +112,16 @@ public:
 	bool go_prev();  // false if it didn't go anywhere (=>at_start() prior to the call)
 
 	std::optional<codepoint> get_codepoint() const;
-	std::optional<utf16_codepoint> get_utf16() const;
+	std::optional<utf16_codepoint> get() const;
 	
 	// This is the only getter the iterator "should" expose but since it has to compute the valid
-	// code unit subsequence anyway it is effecient for it to also offer get_utf8().
+	// code unit subsequence anyway it is effecient for it to also offer get().
 	std::span<const std::uint16_t> get_underlying() const;
 private:
 	const std::uint16_t* m_p {};
 	const std::uint16_t* m_pbeg {};
 	const std::uint16_t* m_pend {};
-};
+};*/
 
 
 // Every word not part of a valid code unit sequence is treated as an indivdual error
@@ -134,17 +137,16 @@ public:
 	bool go_prev();  // false if it didn't go anywhere (=>at_start() prior to the call)
 
 	std::optional<codepoint> get_codepoint() const;
-	std::optional<utf16_codepoint> get_utf16() const;
+	std::optional<utf16_codepoint> get() const;
 	
 	// This is the only getter the iterator "should" expose but since it has to compute the valid
-	// code unit subsequence anyway it is effecient for it to also offer get_utf8().
+	// code unit subsequence anyway it is effecient for it to also offer get().
 	std::span<const std::uint16_t> get_underlying() const;
 private:
 	const std::uint16_t* m_p {};
 	const std::uint16_t* m_pbeg {};
 	const std::uint16_t* m_pend {};
 };
-
 
 
 // Treats all ill-formed subsequences, no matter how long, and no matter their contents, as single errors
@@ -163,7 +165,7 @@ public:
 	std::optional<utf32_codepoint> get_utf32() const;
 	
 	// This is the only getter the iterator "should" expose but since it has to compute the valid
-	// code unit subsequence anyway it is effecient for it to also offer get_utf8().
+	// code unit subsequence anyway it is efficient for it to also offer get().
 	std::span<const std::uint32_t> get_underlying() const;
 private:
 	const std::uint32_t* m_p {};
@@ -187,7 +189,7 @@ public:
 	std::optional<utf32_codepoint_swapped> get_utf32() const;
 	
 	// This is the only getter the iterator "should" expose but since it has to compute the valid
-	// code unit subsequence anyway it is effecient for it to also offer get_utf8().
+	// code unit subsequence anyway it is efficient for it to also offer get().
 	std::span<const std::uint32_t> get_underlying() const;
 private:
 	const std::uint32_t* m_p {};
@@ -212,7 +214,7 @@ public:
 	std::optional<utf32_codepoint> get_utf32() const;
 	
 	// This is the only getter the iterator "should" expose but since it has to compute the valid
-	// code unit subsequence anyway it is effecient for it to also offer get_utf8().
+	// code unit subsequence anyway it is efficient for it to also offer get().
 	std::span<const std::uint32_t> get_underlying() const;
 private:
 	const std::uint32_t* m_p {};
@@ -237,7 +239,7 @@ public:
 	std::optional<utf32_codepoint_swapped> get_utf32() const;
 	
 	// This is the only getter the iterator "should" expose but since it has to compute the valid
-	// code unit subsequence anyway it is effecient for it to also offer get_utf8().
+	// code unit subsequence anyway it is efficient for it to also offer get().
 	std::span<const std::uint32_t> get_underlying() const;
 private:
 	const std::uint32_t* m_p {};

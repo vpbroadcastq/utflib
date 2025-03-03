@@ -17,6 +17,12 @@ struct utf8_customizer {
 	static std::optional<int> pred(std::span<const underlying>);
 };
 
+struct utf16_customizer {
+	using underlying = std::uint16_t;
+	using codepoint_type = utf16_codepoint;
+	static std::optional<int> pred(std::span<const underlying>);
+};
+
 template<typename custom>
 class utf_iterator {
 public:
@@ -108,17 +114,16 @@ public:
 		return std::nullopt;
 	}
 	
-	// TODO:  Obviously can't be named get_"utf8" on a generic type
-	std::optional<typename custom::codepoint_type> get_utf8() const {
+	std::optional<typename custom::codepoint_type> get() const {
 		std::optional<int> sz = custom::pred(std::span<const custom::underlying>{m_p,m_pend});
 		if (sz) {
-			return utf8_codepoint(std::span<const std::uint8_t>{m_p,m_p+*sz});
+			return custom::codepoint_type(std::span<const custom::underlying>{m_p,m_p+*sz});
 		}
 		return std::nullopt;
 	}
 	
 	// This is the only getter the iterator "should" expose but since it has to compute the valid
-	// code unit subsequence anyway it is effecient for it to also offer get_utf8().
+	// code unit subsequence anyway it is effecient for it to also offer get().
 	std::span<const typename custom::underlying> get_underlying() const {
 		if (is_finished()) {
 			return {};

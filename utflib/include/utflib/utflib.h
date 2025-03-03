@@ -61,7 +61,10 @@ public:
 		return false;
 	}
 
-	friend class utf16_iterator;
+	// TODO:  Here and elsewhere, only the appropriate specialization should be a friend
+	template<typename T>
+	friend class utf_iterator;
+	//friend class utf16_iterator;
 	friend class utf16_iterator_alt;
 private:
 	utf16_codepoint(const std::uint16_t*, const std::uint16_t*);
@@ -167,7 +170,7 @@ public:
 	//friend class utf8_iterator;
 	friend class utf8_iterator_alt;
 	friend class utf16_iterator_alt;
-	friend class utf16_iterator;
+	//friend class utf16_iterator;
 	friend class utf32_iterator_alt;
 	friend class utf32_iterator;
 	friend class utf32_iterator_swapping;
@@ -180,6 +183,9 @@ private:
 	// TODO:  Dubious?  The impl has to assume it's UTF-8.  Maybe potential users of this should just make 
 	// the uint32_t conversion themselves and use the one above.  
 	explicit codepoint(std::span<const std::uint8_t>);
+
+	// Assumes valid utf16
+	explicit codepoint(std::span<const std::uint16_t>);
 
 	std::uint32_t m_val {};
 };
