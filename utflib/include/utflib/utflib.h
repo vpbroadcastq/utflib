@@ -31,7 +31,7 @@ public:
 
 	template<typename T>
 	friend class utf_iterator;
-	//friend class utf8_iterator;
+
 	friend class utf8_iterator_alt;
 private:
 	utf8_codepoint(const std::uint8_t*, const std::uint8_t*);
@@ -64,7 +64,7 @@ public:
 	// TODO:  Here and elsewhere, only the appropriate specialization should be a friend
 	template<typename T>
 	friend class utf_iterator;
-	//friend class utf16_iterator;
+
 	friend class utf16_iterator_alt;
 private:
 	utf16_codepoint(const std::uint16_t*, const std::uint16_t*);
@@ -94,12 +94,10 @@ public:
 		return false;
 	}
 
-
 	// TODO:  Here and elsewhere, only the appropriate specialization should be a friend
 	template<typename T>
 	friend class utf_iterator;
 
-	//friend class utf32_iterator;
 	friend class utf32_iterator_swapping;
 	friend class utf32_iterator_alt;
 private:
@@ -127,7 +125,6 @@ public:
 		return false;
 	}
 
-	//friend class utf32_iterator;  // TODO:  Needed?
 	friend class utf32_iterator_swapping;
 	friend class utf32_iterator_alt;  // TODO:  Needed?
 	friend class utf32_iterator_alt_swapping;
@@ -170,14 +167,13 @@ public:
 	std::uint32_t get() const noexcept;
 
 	friend std::strong_ordering operator<=>(const codepoint&,const codepoint&) = default;
+	
 	template<typename T>
 	friend class utf_iterator;
-	//friend class utf8_iterator;
+
 	friend class utf8_iterator_alt;
 	friend class utf16_iterator_alt;
-	//friend class utf16_iterator;
 	friend class utf32_iterator_alt;
-	//friend class utf32_iterator;
 	friend class utf32_iterator_swapping;
 	friend class utf32_iterator_alt_swapping;
 private:
@@ -185,11 +181,10 @@ private:
 	// codepoints via the static member to_codepoint(T).
 	explicit codepoint(std::uint32_t val) : m_val(val) {}
 
-	// TODO:  Dubious?  The impl has to assume it's UTF-8.  Maybe potential users of this should just make 
-	// the uint32_t conversion themselves and use the one above.  
+	// Assumes valid utf-8
 	explicit codepoint(std::span<const std::uint8_t>);
 
-	// Assumes valid utf16
+	// Assumes valid utf-16
 	explicit codepoint(std::span<const std::uint16_t>);
 
 	// Kinda silly since the span can have only one element, but it's a consequence of the generic_iterator impl;

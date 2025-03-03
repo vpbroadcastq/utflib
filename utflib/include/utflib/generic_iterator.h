@@ -193,3 +193,15 @@ private:
 };
 
 
+// Potential TODO:
+// The standard C++ iterator operations for use with a sentinel indicating the end of the range.
+// TODO: Should these ++ & -- operations carry the iterator beyond its range?  No, obviously?
+//std::optional<codepoint> operator*() const;
+//utf8_iterator& operator++();
+//utf8_iterator operator++(int);
+//utf8_iterator& operator--();
+//utf8_iterator operator--(int);
+//bool operator==(const utf8_iterator&) const;
+//static_assert(std::bidirectional_iterator<utf8_iterator>);*/
+
+
