@@ -19,11 +19,11 @@ TEST(utf32_iterator_alt_forward, valid) {
 		std::size_t idx {0};
 		while (!it.is_finished()) {
 			std::optional<codepoint> ocp = it.get_codepoint();
-			std::optional<utf32_codepoint> ou32 = it.get_utf32();
+			std::optional<utf32_codepoint> ou32 = it.get();
 			ASSERT_TRUE(ocp.has_value());
 			ASSERT_TRUE(ou32.has_value());
 			EXPECT_EQ(ocp->get(), e[idx]);
-			// Verify that the iterator's utf32 and codepoint getters return the same thing
+			// Verify that the iterator's utf32 and codepoint get()ters return the same thing
 			codepoint cp(*ou32);
 			EXPECT_EQ(*ocp, cp);
 			it.go_next();
@@ -43,11 +43,11 @@ TEST(utf32_iterator_alt_backward, valid) {
 			--idx;
 			ASSERT_TRUE(idx < e.size());
 			std::optional<codepoint> ocp = it.get_codepoint();
-			std::optional<utf32_codepoint> ou32 = it.get_utf32();
+			std::optional<utf32_codepoint> ou32 = it.get();
 			ASSERT_TRUE(ocp.has_value());
 			ASSERT_TRUE(ou32.has_value());
 			EXPECT_EQ(ocp->get(), e[idx]);
-			// Verify that the iterator's utf32 and codepoint getters return the same thing
+			// Verify that the iterator's utf32 and codepoint get()ters return the same thing
 			codepoint cp(*ou32);
 			EXPECT_EQ(cp, *ocp);
 		}
@@ -65,11 +65,11 @@ TEST(utf32_iterator_alt_forward, invalid) {
 		while (!it.is_finished()) {
 			ASSERT_TRUE(idx_u32alt < e.utf32_alt.size());
 			std::optional<codepoint> ocp = it.get_codepoint();
-			std::optional<utf32_codepoint> ou32 = it.get_utf32();
+			std::optional<utf32_codepoint> ou32 = it.get();
 			if (ocp) {
 				EXPECT_EQ(ocp->get(), e.utf32_alt[idx_u32alt]);
 				EXPECT_TRUE(ou32.has_value());
-				// Verify that the iterator's utf32 and codepoint getters return the same thing
+				// Verify that the iterator's utf32 and codepoint get()ters return the same thing
 				codepoint cp(*ou32);
 				EXPECT_EQ(cp, *ocp);
 			} else {
@@ -96,12 +96,12 @@ TEST(utf32_iterator_alt_backward, invalid) {
 			--idx_u32alt;
 			ASSERT_TRUE(idx_u32alt < e.utf32_alt.size());
 			std::optional<codepoint> ocp = it.get_codepoint();
-			std::optional<utf32_codepoint> ou32 = it.get_utf32();
+			std::optional<utf32_codepoint> ou32 = it.get();
 			if (ocp) {
 				bool b = ocp->get()==e.utf32_alt[idx_u32alt];
 				EXPECT_EQ(ocp->get(), e.utf32_alt[idx_u32alt]);
 				EXPECT_TRUE(ou32.has_value());
-				// Verify that the iterator's utf8 and codepoint getters return the same thing
+				// Verify that the iterator's utf8 and codepoint get()ters return the same thing
 				codepoint cp(*ou32);
 				EXPECT_EQ(cp, *ocp);
 			} else {
@@ -130,11 +130,11 @@ TEST(utf32_iterator_alt_swapping_forward, valid) {
 		std::size_t idx {0};
 		while (!it.is_finished()) {
 			std::optional<codepoint> ocp = it.get_codepoint();
-			std::optional<utf32_codepoint_swapped> ou32 = it.get_utf32();
+			std::optional<utf32_codepoint_swapped> ou32 = it.get();
 			ASSERT_TRUE(ocp.has_value());
 			ASSERT_TRUE(ou32.has_value());
 			EXPECT_EQ(ocp->get(), e[idx]);  // Note:  e, not e_swapped!
-			// Verify that the iterator's utf32 and codepoint getters return the same thing
+			// Verify that the iterator's utf32 and codepoint get()ters return the same thing
 			codepoint cp(*ou32);
 			EXPECT_EQ(*ocp, cp);
 			it.go_next();
@@ -161,11 +161,11 @@ TEST(utf32_iterator_alt_swapping_backward, valid) {
 			--idx;
 			ASSERT_TRUE(idx < e.size());
 			std::optional<codepoint> ocp = it.get_codepoint();
-			std::optional<utf32_codepoint_swapped> ou32 = it.get_utf32();
+			std::optional<utf32_codepoint_swapped> ou32 = it.get();
 			ASSERT_TRUE(ocp.has_value());
 			ASSERT_TRUE(ou32.has_value());
 			EXPECT_EQ(ocp->get(), e[idx]);  // Note:  e, not e_swapped!
-			// Verify that the iterator's utf32 and codepoint getters return the same thing
+			// Verify that the iterator's utf32 and codepoint get()ters return the same thing
 			codepoint cp(*ou32);
 			EXPECT_EQ(cp, *ocp);
 		}
@@ -189,11 +189,11 @@ TEST(utf32_iterator_alt_swapping_forward, invalid) {
 		while (!it.is_finished()) {
 			ASSERT_TRUE(idx_u32alt < e.utf32_alt.size());
 			std::optional<codepoint> ocp = it.get_codepoint();
-			std::optional<utf32_codepoint_swapped> ou32 = it.get_utf32();
+			std::optional<utf32_codepoint_swapped> ou32 = it.get();
 			if (ocp) {
 				EXPECT_EQ(ocp->get(), e.utf32_alt[idx_u32alt]);  // Note:  e, not e_swapped!
 				EXPECT_TRUE(ou32.has_value());
-				// Verify that the iterator's utf32 and codepoint getters return the same thing
+				// Verify that the iterator's utf32 and codepoint get()ters return the same thing
 				codepoint cp(*ou32);
 				EXPECT_EQ(cp, *ocp);
 			} else {
@@ -225,11 +225,11 @@ TEST(utf32_iterator_alt_swapping_backward, invalid) {
 			--idx_u32alt;
 			ASSERT_TRUE(idx_u32alt < e.utf32_alt.size());
 			std::optional<codepoint> ocp = it.get_codepoint();
-			std::optional<utf32_codepoint_swapped> ou32 = it.get_utf32();
+			std::optional<utf32_codepoint_swapped> ou32 = it.get();
 			if (ocp) {
 				EXPECT_EQ(ocp->get(), e.utf32_alt[idx_u32alt]);  // Note:  e, not e_swapped!
 				EXPECT_TRUE(ou32.has_value());
-				// Verify that the iterator's utf8 and codepoint getters return the same thing
+				// Verify that the iterator's utf8 and codepoint get()ters return the same thing
 				codepoint cp(*ou32);
 				EXPECT_EQ(cp, *ocp);
 			} else {

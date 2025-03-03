@@ -1,132 +1,10 @@
 #include "utflib/iterators.h"
-
 #include "utflib/byte_manip.h"
 #include "utflib/low_level.h"
 #include <span>
 #include <cstdint>
 #include <optional>
 
-
-utf8_iterator::utf8_iterator(std::span<const std::uint8_t> s) {
-	m_pbeg = s.data();
-	m_p = s.data();
-	m_pend = s.data() + s.size();
-}
-
-bool utf8_iterator::go_next() {
-	if (is_finished()) {
-		return false;
-	}
-	std::span<const std::uint8_t> first_valid = seek_to_first_valid_utf8_sequence({m_p,m_pend});
-	
-	if (m_p == first_valid.data()) {
-		// The current position (m_p) is the start of a valid byte sequence.
-		m_p = first_valid.data() + first_valid.size();
-	} else {
-		// The current position (m_p) is the start of an invalid byte sequence, and seek_to_first_valid_utf8_sequence()
-		// skipped over it.
-		m_p = const_cast<std::uint8_t*>(first_valid.data());
-	}
-	return true;
-}
-
-bool utf8_iterator::go_prev() {
-	if (at_start()) {
-		return false;
-	}
-
-	const std::uint8_t* p = m_p;
-	std::optional<int> sz = std::nullopt;
-	while (true) {
-		--p;
-		sz = begins_with_valid_utf8({p,m_pend});
-		if (p==m_pbeg || sz) {
-			break;
-		}
-	}
-	// p does not need to move backwards any further.  Either p is on a valid start byte or p is at the beginning
-	// of the sequence.  In either event, p may need to move forward.
-	if (sz) {
-		if (p+*sz == m_p) {
-			// p is on a valid start byte and there is no intervening invalid sequence between the valid sequence
-			// beginning at p and the valid sequence beginning at m_p.
-		} else {
-			// p is on a valid start byte but p + *sz > m_p.  There is an invalid byte sequence between the valid
-			// byte sequence starting at p and the valid byte sequence starting at m_p.  p needs to be moved forward
-			// to the beginning of the invalid byte sequence.
-			p += *sz;
-		}
-	} else {  // !sz
-		// p is on an at the very beginning of the sequence; the sequence begins with an invalid byte sequence.
-	}
-
-	m_p = p;
-	return true;
-}
-
-bool utf8_iterator::is_finished() const {
-	return m_p == m_pend;
-}
-
-bool utf8_iterator::at_start() const {
-	return m_p == m_pbeg;
-}
-
-std::optional<codepoint> utf8_iterator::get_codepoint() const {
-	std::span<const std::uint8_t> next_valid = seek_to_first_valid_utf8_sequence({m_p,m_pend});
-	if (m_p != next_valid.data() || next_valid.size()==0) {
-		return std::nullopt;
-	}
-	return codepoint(next_valid);
-}
-
-std::optional<utf8_codepoint> utf8_iterator::get_utf8() const {
-	std::span<const std::uint8_t> next_valid = seek_to_first_valid_utf8_sequence({m_p,m_pend});
-	if (m_p != next_valid.data() || next_valid.size()==0) {
-		return std::nullopt;
-	}
-	return utf8_codepoint(next_valid);
-}
-
-std::span<const std::uint8_t> utf8_iterator::get_underlying() const {
-	std::span<const std::uint8_t> next_valid = seek_to_first_valid_utf8_sequence({m_p,m_pend});
-	if (m_p != next_valid.data()) {
-		// m_p is on the first byte of an invalid subsequence
-		return {m_p,next_valid.data()};
-	}
-	return next_valid;
-}
-
-std::optional<codepoint> utf8_iterator::operator*() const {
-	return get_codepoint();
-}
-
-utf8_iterator& utf8_iterator::operator++() {
-	go_next();
-	return *this;
-}
-
-utf8_iterator utf8_iterator::operator++(int) {
-	utf8_iterator copy = *this;
-	go_next();
-	return copy;
-}
-
-utf8_iterator& utf8_iterator::operator--() {
-	go_prev();
-	return *this;
-}
-
-utf8_iterator utf8_iterator::operator--(int) {
-	utf8_iterator copy = *this;
-	go_prev();
-	return copy;
-}
-
-// TODO:  Note how I'm only comparing all three pointers and not just m_p... correct?
-bool utf8_iterator::operator==(const utf8_iterator& lhs) const {
-	return m_pbeg==lhs.m_pbeg && m_p==lhs.m_p && m_pend==lhs.m_pend;
-}
 
 //
 // utf8_iterator_alt
@@ -228,7 +106,7 @@ std::optional<codepoint> utf8_iterator_alt::get_codepoint() const {
 	return codepoint(next_valid);
 }
 
-std::optional<utf8_codepoint> utf8_iterator_alt::get_utf8() const {
+std::optional<utf8_codepoint> utf8_iterator_alt::get() const {
 	std::span<const std::uint8_t> next_valid = seek_to_first_valid_utf8_sequence({m_p,static_cast<std::size_t>(m_pend-m_p)});
 	if (m_p != next_valid.data() || next_valid.size()==0) {
 		return std::nullopt;
@@ -240,114 +118,6 @@ std::span<const std::uint8_t> utf8_iterator_alt::get_underlying() const {
 	utf8_iterator_alt it = *this;
 	it.go_next();
 	return {m_p, it.m_p};
-}
-
-
-//
-// utf16_iterator
-//
-utf16_iterator::utf16_iterator(std::span<const std::uint16_t> s) {
-	m_p = s.data();
-	m_pbeg = s.data();
-	m_pend = s.data() + s.size();
-}
-
-bool utf16_iterator::is_finished() const {
-	return m_p == m_pend;
-}
-
-bool utf16_iterator::at_start() const {
-	return m_p == m_pbeg;
-}
-
-// false if it didn't go anywhere (=>is_finished() prior to the call)
-bool utf16_iterator::go_next() {
-	// m_p is pointing at the first word of a valid code unit sequence, the first word of an
-	// invalid code unit sequence, or at the end
-	if (m_p == m_pend) {
-		return false;
-	}
-	std::span<const std::uint16_t> s = seek_to_first_valid_utf16_sequence({m_p,m_pend});
-	if (s.data()!=m_p) {
-		// The iterator is on the first word of an invalid sequence; s.data() is the start of the
-		// next valid sequence (or the end).
-		m_p = s.data();
-	} else {
-		// s.data() == m_p means that the iterator is on the first word of a valid sequence; simply
-		// skip over it
-		m_p += s.size();
-	}
-
-	return true;
-}
-
-
-// false if it didn't go anywhere (=>at_start() prior to the call)
-bool utf16_iterator::go_prev() {
-	if (at_start()) {
-		return false;
-	}
-
-	const std::uint16_t* p = m_p;
-	std::optional<int> sz = std::nullopt;
-	while (true) {
-		--p;
-		sz = begins_with_valid_utf16({p,m_pend});
-		if (p==m_pbeg || sz) {
-			break;
-		}
-	}
-	// p does not need to move backwards any further.  Either p is on a valid start word or p is at the beginning
-	// of the sequence.  In either event, p may need to move forward.
-	if (sz) {
-		if (p+*sz == m_p) {
-			// p is on a valid start word and there is no intervening invalid sequence between the valid sequence
-			// beginning at p and the valid sequence beginning at m_p.
-		} else {
-			// p is on a valid start word but p + *sz > m_p.  There is an invalid word sequence between the valid
-			// word sequence starting at p and the valid word sequence starting at m_p.  p needs to be moved forward
-			// to the beginning of the invalid word sequence.
-			p += *sz;
-		}
-	} else {  // !sz
-		// p is on an at the very beginning of the sequence; the sequence begins with an invalid word sequence.
-	}
-
-	m_p = p;
-	return true;
-}
-
-std::optional<codepoint> utf16_iterator::get_codepoint() const {
-	std::span<const std::uint16_t> next_valid = seek_to_first_valid_utf16_sequence({m_p,m_pend});
-	if (m_p != next_valid.data() || next_valid.data()==0) {
-		return std::nullopt;
-	}
-
-	if (next_valid.size()==1) {
-		return codepoint(utf16_to_codepoint_value(next_valid[0]));
-	}
-
-	return codepoint(utf16_to_codepoint_value(next_valid[0],next_valid[1]));
-}
-
-std::optional<utf16_codepoint> utf16_iterator::get_utf16() const {
-	std::span<const std::uint16_t> next_valid = seek_to_first_valid_utf16_sequence({m_p,m_pend});
-	if (m_p != next_valid.data() || next_valid.size()==0) {
-		return std::nullopt;
-	}
-	return utf16_codepoint(next_valid);
-}
-	
-std::span<const std::uint16_t> utf16_iterator::get_underlying() const {
-	std::span<const std::uint16_t> s = seek_to_first_valid_utf16_sequence({m_p,m_pend});
-	if (m_p == s.data()) {
-		// m_p is pointing at the first word of a valid code unit sequence
-		return s;
-	}
-	// m_p is pointing at the first word of a (potentially multi-word) sequence of invalid words.
-	// s.data() is pointing either at the end of the range or the start of the first valid code unit
-	// sequence following the invalid sequence.
-	return {m_p, s.data()};
 }
 
 
@@ -427,118 +197,18 @@ std::optional<codepoint> utf16_iterator_alt::get_codepoint() const {
 	return codepoint(utf16_to_codepoint_value(next_valid[0],next_valid[1]));
 }
 
-std::optional<utf16_codepoint> utf16_iterator_alt::get_utf16() const {
+std::optional<utf16_codepoint> utf16_iterator_alt::get() const {
 	std::span<const std::uint16_t> next_valid = seek_to_first_valid_utf16_sequence({m_p,m_pend});
 	if (m_p != next_valid.data() || next_valid.size()==0) {
 		return std::nullopt;
 	}
 	return utf16_codepoint(next_valid);
 }
-	
+
 std::span<const std::uint16_t> utf16_iterator_alt::get_underlying() const {
 	utf16_iterator_alt it = *this;
 	it.go_next();
 	return {m_p, it.m_p};
-}
-
-
-
-//
-// utf32_iterator
-//
-utf32_iterator::utf32_iterator(std::span<const std::uint32_t> s) {
-	m_p = s.data();
-	m_pbeg = s.data();
-	m_pend = s.data() + s.size();
-}
-
-bool utf32_iterator::is_finished() const {
-	return m_p == m_pend;
-}
-
-bool utf32_iterator::at_start() const {
-	return m_p == m_pbeg;
-}
-
-// false if it didn't go anywhere (=>is_finished() prior to the call)
-bool utf32_iterator::go_next() {
-	// m_p is pointing at the first dw of a valid code unit sequence (of length 1 because utf-32),
-	// the first dw of an invalid code unit sequence, or at the end.
-	if (is_finished()) {
-		return false;
-	}
-
-	if (is_valid_utf32_codepoint(*m_p)) {
-		// Step over the current valid code unit onto whatever comes next (valid or invalid)
-		++m_p;
-	} else {
-		m_p = seek_to_first_valid_utf32_sequence({m_p,m_pend}).data();
-	}
-	return true;
-}
-
-
-// false if it didn't go anywhere (=>at_start() prior to the call)
-bool utf32_iterator::go_prev() {
-	if (at_start()) {
-		return false;
-	}
-
-	const std::uint32_t* p = m_p;
-	std::optional<int> sz = std::nullopt;
-	while (true) {
-		--p;
-		sz = begins_with_valid_utf32({p,m_pend});
-		if (p==m_pbeg || sz) {
-			break;
-		}
-	}
-	// p does not need to move backwards any further.  Either p is on a valid start dword or p is at the beginning
-	// of the sequence.  In either event, p may need to move forward.
-	if (sz) {
-		if (p+*sz == m_p) {
-			// p is on a valid dword and there is no intervening invalid sequence between the valid dword at p and
-			// the valid dword at m_p.
-		} else {
-			// p is on a valid dword but p + *sz > m_p.  There is an invalid dword sequence between the valid
-			// dword starting at p and the valid dword starting at m_p.  p needs to be moved forward to the
-			// beginning of the invalid word sequence.
-			p += *sz;
-		}
-	} else {  // !sz
-		// p is on an at the very beginning of the sequence; the sequence begins with an dword.
-	}
-
-	m_p = p;
-	return true;
-}
-
-std::optional<codepoint> utf32_iterator::get_codepoint() const {
-	if (!is_finished() && is_valid_utf32_codepoint(*m_p)) {
-		return codepoint(*m_p);
-	}
-	return std::nullopt;
-}
-
-std::optional<utf32_codepoint> utf32_iterator::get_utf32() const {
-	if (!is_finished() && is_valid_utf32_codepoint(*m_p)) {
-		return utf32_codepoint(std::span<const std::uint32_t>{m_p,m_p+1});
-	}
-	return std::nullopt;
-}
-	
-std::span<const std::uint32_t> utf32_iterator::get_underlying() const {
-	if (is_finished()) {
-		return {m_p, m_pend};
-	}
-
-	if (is_valid_utf32_codepoint(*m_p)) {
-		return {m_p, m_p+1};
-	}
-
-	// m_p is at the start of an invalid sequence
-	// TODO:  This is wrong.  Write tests.
-	return seek_to_first_valid_utf32_sequence({m_p, m_pend});
 }
 
 
@@ -622,7 +292,7 @@ std::optional<codepoint> utf32_iterator_swapping::get_codepoint() const {
 	return std::nullopt;
 }
 
-std::optional<utf32_codepoint_swapped> utf32_iterator_swapping::get_utf32() const {
+std::optional<utf32_codepoint_swapped> utf32_iterator_swapping::get() const {
 	if (!is_finished() && is_valid_utf32_codepoint(reverse_bytes(*m_p))) {
 		return utf32_codepoint_swapped(std::span<const std::uint32_t>{m_p,m_p+1});
 	}
@@ -692,7 +362,7 @@ std::optional<codepoint> utf32_iterator_alt::get_codepoint() const {
 	return std::nullopt;
 }
 
-std::optional<utf32_codepoint> utf32_iterator_alt::get_utf32() const {
+std::optional<utf32_codepoint> utf32_iterator_alt::get() const {
 	if (!is_finished() && is_valid_utf32_codepoint(*m_p)) {
 		return utf32_codepoint(std::span<const std::uint32_t>{m_p,m_p+1});
 	}
@@ -756,7 +426,7 @@ std::optional<codepoint> utf32_iterator_alt_swapping::get_codepoint() const {
 	return std::nullopt;
 }
 
-std::optional<utf32_codepoint_swapped> utf32_iterator_alt_swapping::get_utf32() const {
+std::optional<utf32_codepoint_swapped> utf32_iterator_alt_swapping::get() const {
 	if (!is_finished() && is_valid_utf32_codepoint(reverse_bytes(*m_p))) {
 		return utf32_codepoint_swapped(std::span<const std::uint32_t>{m_p,m_p+1});
 	}

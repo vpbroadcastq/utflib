@@ -178,6 +178,20 @@ codepoint::codepoint(std::span<const std::uint8_t> s) {
 	}
 }
 
+// TODO:  Is this as efficient as possible?
+codepoint::codepoint(std::span<const std::uint16_t> s) {
+	int sz = s.size();
+	if (sz == 1) {
+		m_val = utf16_to_codepoint_value(s[0]);
+	} else if (sz == 2) {
+		m_val = utf16_to_codepoint_value(s[0],s[1]);
+	}
+}
+
+codepoint::codepoint(std::span<const std::uint32_t> s) {
+	m_val = s[0];
+}
+
 std::optional<codepoint> codepoint::to_codepoint(std::uint32_t val) noexcept {
 	if (!is_valid_cp(val)) {
 		return std::nullopt;
