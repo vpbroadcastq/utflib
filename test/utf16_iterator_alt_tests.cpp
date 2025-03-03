@@ -35,7 +35,7 @@ TEST(utf16_iterator_alt_to_utf32_forward, valid) {
 			ASSERT_TRUE(ocp.has_value());
 			ASSERT_TRUE(ou16.has_value());
 			EXPECT_EQ(ocp->get(), e.utf32[idx_u32]);
-			// Verify that the iterator's utf16 and codepoint getters return the same thing
+			// Verify that the iterator's utf16 and codepoint get()ters return the same thing
 			codepoint cp(*ou16);
 			EXPECT_EQ(*ocp, cp);
 			it.go_next();
@@ -61,7 +61,7 @@ TEST(utf16_iterator_alt_to_utf32_backward, valid) {
 			ASSERT_TRUE(ocp.has_value());
 			ASSERT_TRUE(ou16.has_value());
 			EXPECT_EQ(ocp->get(), e.utf32[idx_u32]);
-			// Verify that the iterator's utf8 and codepoint getters return the same thing
+			// Verify that the iterator's utf8 and codepoint get()ters return the same thing
 			codepoint cp(*ou16);
 			EXPECT_EQ(cp, *ocp);
 		}
@@ -82,7 +82,7 @@ TEST(utf16_iterator_alt_to_utf32_forward, invalid) {
 				ASSERT_TRUE(ou16.has_value());
 				bool b = ocp->get() == e.utf32_alt[idx_u32];
 				EXPECT_EQ(ocp->get(), e.utf32_alt[idx_u32]);
-				// Verify that the iterator's utf16 and codepoint getters return the same thing
+				// Verify that the iterator's utf16 and codepoint get()ters return the same thing
 				codepoint cp(*ou16);
 				EXPECT_EQ(*ocp, cp);
 			} else {
@@ -110,7 +110,7 @@ TEST(utf16_iterator_alt_to_utf32_backward, invalid) {
 			if (ocp) {
 				EXPECT_EQ(ocp->get(), e.utf32_alt[idx_u32]);
 				EXPECT_TRUE(ou16.has_value());
-				// Verify that the iterator's utf16 and codepoint getters return the same thing
+				// Verify that the iterator's utf16 and codepoint get()ters return the same thing
 				codepoint cp(*ou16);
 				EXPECT_EQ(cp, *ocp);
 			} else {

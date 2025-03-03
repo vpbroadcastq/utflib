@@ -94,7 +94,12 @@ public:
 		return false;
 	}
 
-	friend class utf32_iterator;
+
+	// TODO:  Here and elsewhere, only the appropriate specialization should be a friend
+	template<typename T>
+	friend class utf_iterator;
+
+	//friend class utf32_iterator;
 	friend class utf32_iterator_swapping;
 	friend class utf32_iterator_alt;
 private:
@@ -122,7 +127,7 @@ public:
 		return false;
 	}
 
-	friend class utf32_iterator;  // TODO:  Needed?
+	//friend class utf32_iterator;  // TODO:  Needed?
 	friend class utf32_iterator_swapping;
 	friend class utf32_iterator_alt;  // TODO:  Needed?
 	friend class utf32_iterator_alt_swapping;
@@ -172,7 +177,7 @@ public:
 	friend class utf16_iterator_alt;
 	//friend class utf16_iterator;
 	friend class utf32_iterator_alt;
-	friend class utf32_iterator;
+	//friend class utf32_iterator;
 	friend class utf32_iterator_swapping;
 	friend class utf32_iterator_alt_swapping;
 private:
@@ -186,6 +191,10 @@ private:
 
 	// Assumes valid utf16
 	explicit codepoint(std::span<const std::uint16_t>);
+
+	// Kinda silly since the span can have only one element, but it's a consequence of the generic_iterator impl;
+	// utf-8 and utf-16 both require spans.
+	explicit codepoint(std::span<const std::uint32_t>);
 
 	std::uint32_t m_val {};
 };

@@ -23,7 +23,7 @@ std::span<utf16_single_word_testdata> get_invalid_utf16_single_word_data();
 // span<uint16_t> get_invalid_leading_surrogates()
 // span<uint16_t> get_valid_trailing_surrogates()
 // span<uint16_t> get_invalid_trailing_surrogates()
-// and perhaps similar for non-surrogate words.  Forget testing the payload functions; they're
+// and perhaps similar for non-surrogate words.  Forget() testing the payload functions; they're
 // weird anyway.
 // If w is invalid as surrogate (invalid as leading and invalid as trailing), payload will be
 // empty, otherwise payload will be populated with the leading or trailing payload as appropriate.

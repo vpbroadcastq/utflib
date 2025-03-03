@@ -486,7 +486,7 @@ std::span<const std::uint16_t> utf16_iterator_alt::get_underlying() const {
 }
 
 
-
+/*
 //
 // utf32_iterator
 //
@@ -574,7 +574,7 @@ std::optional<codepoint> utf32_iterator::get_codepoint() const {
 	return std::nullopt;
 }
 
-std::optional<utf32_codepoint> utf32_iterator::get_utf32() const {
+std::optional<utf32_codepoint> utf32_iterator:.get() const {
 	if (!is_finished() && is_valid_utf32_codepoint(*m_p)) {
 		return utf32_codepoint(std::span<const std::uint32_t>{m_p,m_p+1});
 	}
@@ -604,7 +604,7 @@ std::span<const std::uint32_t> utf32_iterator::get_underlying() const {
 	}
 	return {m_p,p};
 }
-
+*/
 
 
 //
@@ -686,7 +686,7 @@ std::optional<codepoint> utf32_iterator_swapping::get_codepoint() const {
 	return std::nullopt;
 }
 
-std::optional<utf32_codepoint_swapped> utf32_iterator_swapping::get_utf32() const {
+std::optional<utf32_codepoint_swapped> utf32_iterator_swapping::get() const {
 	if (!is_finished() && is_valid_utf32_codepoint(reverse_bytes(*m_p))) {
 		return utf32_codepoint_swapped(std::span<const std::uint32_t>{m_p,m_p+1});
 	}
@@ -756,7 +756,7 @@ std::optional<codepoint> utf32_iterator_alt::get_codepoint() const {
 	return std::nullopt;
 }
 
-std::optional<utf32_codepoint> utf32_iterator_alt::get_utf32() const {
+std::optional<utf32_codepoint> utf32_iterator_alt::get() const {
 	if (!is_finished() && is_valid_utf32_codepoint(*m_p)) {
 		return utf32_codepoint(std::span<const std::uint32_t>{m_p,m_p+1});
 	}
@@ -820,7 +820,7 @@ std::optional<codepoint> utf32_iterator_alt_swapping::get_codepoint() const {
 	return std::nullopt;
 }
 
-std::optional<utf32_codepoint_swapped> utf32_iterator_alt_swapping::get_utf32() const {
+std::optional<utf32_codepoint_swapped> utf32_iterator_alt_swapping::get() const {
 	if (!is_finished() && is_valid_utf32_codepoint(reverse_bytes(*m_p))) {
 		return utf32_codepoint_swapped(std::span<const std::uint32_t>{m_p,m_p+1});
 	}

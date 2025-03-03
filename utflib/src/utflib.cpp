@@ -188,6 +188,10 @@ codepoint::codepoint(std::span<const std::uint16_t> s) {
 	}
 }
 
+codepoint::codepoint(std::span<const std::uint32_t> s) {
+	m_val = s[0];
+}
+
 std::optional<codepoint> codepoint::to_codepoint(std::uint32_t val) noexcept {
 	if (!is_valid_cp(val)) {
 		return std::nullopt;

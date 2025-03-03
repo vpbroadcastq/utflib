@@ -7,7 +7,7 @@
 
 // Alternatives:  Could have a data member that holds the last size, valid if the predicate returned true.
 // Might be better, because this thing could also return the length of an invalid subseq if that's what the
-// predicate gets fed.
+// predicate get()s fed.
 // The only members of this cusotmization type should be things that are actually customizable.  Since the
 // use of span is not, span shouldn't be mentioned here.  Since the pointer type has to comport with the
 // underlying type, there shouldn't be a seperate entry for underlying_ptr, etc.
@@ -20,6 +20,12 @@ struct utf8_customizer {
 struct utf16_customizer {
 	using underlying = std::uint16_t;
 	using codepoint_type = utf16_codepoint;
+	static std::optional<int> pred(std::span<const underlying>);
+};
+
+struct utf32_customizer {
+	using underlying = std::uint32_t;
+	using codepoint_type = utf32_codepoint;
 	static std::optional<int> pred(std::span<const underlying>);
 };
 
@@ -122,7 +128,7 @@ public:
 		return std::nullopt;
 	}
 	
-	// This is the only getter the iterator "should" expose but since it has to compute the valid
+	// This is the only get()ter the iterator "should" expose but since it has to compute the valid
 	// code unit subsequence anyway it is effecient for it to also offer get().
 	std::span<const typename custom::underlying> get_underlying() const {
 		if (is_finished()) {
