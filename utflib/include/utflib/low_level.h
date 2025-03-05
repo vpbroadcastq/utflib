@@ -3,6 +3,25 @@
 #include <span>
 #include <optional>
 
+
+// This is really what the begins_with_valid_utfN functions should be.  If the input sequence is invalid,
+// they can return the position (size) of the first invalid unit; instead, at present, they throw this
+// away and just return an empty optional.  Here, if !is_valid, size contains the distance to the first
+// invalid byte.
+// I'm naming these functions starts_with_... because they should eventually replace the begins_with...
+// functions.  TODO:  Replace begins_with_utfN() with starts_with_utfN().
+struct valid_size {
+	int size {};
+	bool is_valid {};
+};
+valid_size starts_with_valid_utf8(std::span<const std::uint8_t> s);
+valid_size starts_with_valid_utf16(std::span<const std::uint16_t> s);
+valid_size starts_with_valid_utf32(std::span<const std::uint32_t> s);
+
+//
+// utf-8
+//
+
 // Table 3-7. Well-Formed UTF-8 Byte Sequences
 // Code Points          First Byte    Second Byte    Third Byte    Fourth Byte
 // U+0000..U+007F       00..7F
@@ -14,7 +33,6 @@
 // U+10000..U+3FFFF     F0            90..BF         80..BF        80..BF
 // U+40000..U+FFFFF     F1..F3        80..BF         80..BF        80..BF
 // U+100000..U+10FFFF   F4            80..8F         80..BF        80..BF
-
 
 // True if b falls in the range given in any row of the "First Byte" column of table 3-7, false
 // otherwise.

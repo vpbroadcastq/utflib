@@ -11,6 +11,77 @@ void expect(bool b, [[maybe_unsed]] const char* msg) {
 	std::abort();
 }
 
+
+// Compare this impl with the begins_with_ impl.  I have to drop the initial
+// if (s.size() < sz) check.
+// Should valid_size::size be such that s.data()+.size() is the next un-examined position, that is,
+// one-past the invalid byte?  Or should it be the position of the invalid byte itself?  If the latter,
+// the interpretation of size changes with is_valid.
+// If s.data()+.size() is the next un-examined position, .size is the number of valid bytes in the subseq
+// If valid, you advance to the next position by adding .size
+// If false you advance to the next position by adding (.size-1), handling the case where .size==0
+valid_size starts_with_valid_utf8(std::span<const std::uint8_t> s) {
+	if (s.size() == 0) {
+		return {0,false};
+	}
+	if (!is_valid_utf8_leading_byte(s[0])) {
+		return {1,false};
+	}
+	int sz = size_utf8_multibyte_seq_from_leading_byte(s[0]);
+	if (sz == 1) {
+		return {1, true};  // +=1 will put you one-past-the-end
+	}
+	if (!is_valid_utf8_second_byte(s[1],s[0])) {
+		return {2,false};
+	}
+	if (sz == 2) {
+		return {sz, true};
+	}
+	if (!is_valid_utf8_third_or_fourth_byte(s[2])) {
+		return {3,false};
+	}
+	if (sz == 3) {
+		return {3, true};
+	}
+	if (!is_valid_utf8_third_or_fourth_byte(s[3])) {
+		return {4, false};
+	}
+	return {4, true};
+}
+
+valid_size starts_with_valid_utf16(std::span<const std::uint16_t> s) {
+	if (s.size() == 0) {
+		return {0, false};
+	}
+	if (is_valid_utf16_codepoint(s[0])) {
+		return {1, true};
+	}
+	if (!is_valid_utf16_surrogate_pair_leading(s[0])) {
+		return {1,false};
+	}
+	// s[0] is a valid leading word of a surrogate pair
+	if (s.size() < 2) {
+		return {1,false};  // Correct???
+	}
+	if (is_valid_utf16_surrogate_pair_trailing(s[1])) {
+		return {2,true};
+	}
+	return {2,false};
+}
+
+valid_size starts_with_valid_utf32(std::span<const std::uint32_t> s) {
+	if (s.size()==0) {
+		return {0,false};
+	}
+	if (is_valid_utf32_codepoint(s[0])) {
+		return {1,true};
+	}
+	return {1,false};
+}
+
+
+
+
 bool is_valid_cp(std::uint32_t cp) {
 	return (cp <= 0xD7FFu)
 		|| (cp>=0xE000u && cp<=0x10FFFFu);
