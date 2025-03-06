@@ -11,62 +11,60 @@ void expect(bool b, [[maybe_unsed]] const char* msg) {
 	std::abort();
 }
 
-
-// Compare this impl with the begins_with_ impl.  I have to drop the initial
-// if (s.size() < sz) check.
-// Should valid_size::size be such that s.data()+.size() is the next un-examined position, that is,
-// one-past the invalid byte?  Or should it be the position of the invalid byte itself?  If the latter,
-// the interpretation of size changes with is_valid.
-// If s.data()+.size() is the next un-examined position, .size is the number of valid bytes in the subseq
-// If valid, you advance to the next position by adding .size
-// If false you advance to the next position by adding (.size-1), handling the case where .size==0
+// The starts_with() functions:
+// If valid, s.data() + r.size = the start of the next subseq (potentially one-past-the-end if s was on
+// the last subseq in the overall sequence).
+// If invalid, s.data() + r.size = the problem byte (_not_ one-past the problem byte) OR one-past-the-end
+// if it's a size issue.
+// This convention means that for an invalid subseq, the valid bytes are [s.data(), s.data()+s.size())
+// Note that this will be an empty range if s.size()==0
 valid_size starts_with_valid_utf8(std::span<const std::uint8_t> s) {
 	if (s.size() == 0) {
 		return {0,false};
 	}
 	if (!is_valid_utf8_leading_byte(s[0])) {
-		return {1,false};
+		return {0,false};  // +=0 will put you on the problem byte
 	}
 	int sz = size_utf8_multibyte_seq_from_leading_byte(s[0]);
 	if (sz == 1) {
-		return {1, true};  // +=1 will put you one-past-the-end
+		return {1, true};  // +=1 will put you at the start of the next subseq
 	}
-	if (!is_valid_utf8_second_byte(s[1],s[0])) {
-		return {2,false};
+	if (s.size() < 2 || !is_valid_utf8_second_byte(s[1],s[0])) {
+		return {1,false};  // +=1 will put you on the problem byte
 	}
 	if (sz == 2) {
-		return {sz, true};
+		return {2, true};  // +=2 will put you at the start of the next subseq
 	}
-	if (!is_valid_utf8_third_or_fourth_byte(s[2])) {
-		return {3,false};
+	if (s.size() < 3 || !is_valid_utf8_third_or_fourth_byte(s[2])) {
+		return {2,false};  // +=2 will put you on the problem byte
 	}
 	if (sz == 3) {
 		return {3, true};
 	}
-	if (!is_valid_utf8_third_or_fourth_byte(s[3])) {
-		return {4, false};
+	if (s.size() < 4 || !is_valid_utf8_third_or_fourth_byte(s[3])) {
+		return {3, false};
 	}
 	return {4, true};
 }
 
 valid_size starts_with_valid_utf16(std::span<const std::uint16_t> s) {
 	if (s.size() == 0) {
-		return {0, false};
+		return {0, false};  // +=0 will put you on the problem byte
 	}
 	if (is_valid_utf16_codepoint(s[0])) {
-		return {1, true};
+		return {1, true};  // +=1 will put you at the start of the next subseq
 	}
 	if (!is_valid_utf16_surrogate_pair_leading(s[0])) {
-		return {1,false};
+		return {0,false};  // +=0 will put you on the problem byte
 	}
 	// s[0] is a valid leading word of a surrogate pair
 	if (s.size() < 2) {
-		return {1,false};  // Correct???
+		return {1,false};  // +=1 => one-past-the-end
 	}
 	if (is_valid_utf16_surrogate_pair_trailing(s[1])) {
 		return {2,true};
 	}
-	return {2,false};
+	return {1,false};
 }
 
 valid_size starts_with_valid_utf32(std::span<const std::uint32_t> s) {
@@ -76,7 +74,7 @@ valid_size starts_with_valid_utf32(std::span<const std::uint32_t> s) {
 	if (is_valid_utf32_codepoint(s[0])) {
 		return {1,true};
 	}
-	return {1,false};
+	return {0,false};
 }
 
 

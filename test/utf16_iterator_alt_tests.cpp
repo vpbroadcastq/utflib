@@ -71,6 +71,7 @@ TEST(utf16_iterator_alt_to_utf32_backward, valid) {
 
 TEST(utf16_iterator_alt_to_utf32_forward, invalid) {
 	std::span<testdata_utf16_utf32_sequences> td = get_invalid_utf16_sequences();
+	int dataset_num {0};
 	for (const auto& e : td) {
 		utf16_iterator_alt it(e.utf16);
 		std::size_t idx_u32 {0};
@@ -93,6 +94,7 @@ TEST(utf16_iterator_alt_to_utf32_forward, invalid) {
 			++idx_u32;
 		}
 		EXPECT_TRUE(idx_u32 == e.utf32_alt.size());
+		++dataset_num;
 	}
 }
 

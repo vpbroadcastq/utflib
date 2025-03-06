@@ -29,40 +29,20 @@ bool utf8_iterator_alt::go_next() {
 		return false;
 	}
 
-	// 1)  m_p could be at the start of a valid subsequence
-	//     => Just compute its size and set m_p += size;
-	// 2)  m_p could be at the start of an invalid subsequence with a valid leading byte
-	//     => Need to compute and move past the maximal subpart.
-	// 3)  m_p could be at the start of an invalid subsequence with an invalid leading byte
-	//     => ++m_p; If m_p is not a valid leading byte it can't be the start of a truncated subsequence,
-	//        so just move past it.  Or put another way, there is no maximal subpart.
-
-	if (!is_valid_utf8_leading_byte(*m_p)) {
-		++m_p;
+	valid_size vs = starts_with_valid_utf8({m_p,m_pend});
+	if (vs.is_valid) {
+		m_p += vs.size;
 		return true;
 	}
 
-	int sz = size_utf8_multibyte_seq_from_leading_byte(*m_p);
-	const std::uint8_t* p = m_p;
-	int curr_bytenum {1};
-	while (true) {
-		++p;
-		if (p == m_pend) {
-			break;
-		}
-		++curr_bytenum;
-		if (curr_bytenum > sz) {
-			break;
-		}
-		// curr_bytenum <= sz
-		if (curr_bytenum == 2 && !is_valid_utf8_second_byte(*p,*m_p)) {
-			break;
-		}
-		if ((curr_bytenum==3 || curr_bytenum==4) && !is_valid_utf8_third_or_fourth_byte(*p)) {
-			break;
-		}
+	// m_p + vs.size is the problem byte; [vs.data(), vs.data()+vs.size()) are the valid bytes.  Note that
+	// this will be an empty range if vs.size()==0.
+	if (vs.size==0) {
+		// m_p is the problem byte; advance past it.
+		++m_p;
+	} else {
+		m_p += vs.size;
 	}
-	m_p = p;
 	return true;
 }
 
@@ -140,22 +120,25 @@ bool utf16_iterator_alt::at_start() const {
 
 // false if it didn't go anywhere (=>is_finished() prior to the call)
 bool utf16_iterator_alt::go_next() {
-	// m_p is pointing at the first word of a valid code unit sequence, an invalid code unit,
-	// or at the end.
-	if (m_p == m_pend) {
+	if (is_finished()) {
 		return false;
 	}
 
-	if (is_valid_utf16_codepoint(*m_p)) {
-		++m_p;
-	} else if ((m_pend-m_p)>=2 && is_valid_utf16_surrogate_pair(*m_p, *(m_p+1))) {
-		m_p += 2;
-	} else {
-		// m_p is on an invalid code unit
-		++m_p;
+	valid_size vs = starts_with_valid_utf16({m_p,m_pend});
+	if (vs.is_valid) {
+		m_p += vs.size;
+		return true;
 	}
 
-	return true;
+	// m_p + vs.size is the problem byte; [vs.data(), vs.data()+vs.size()) are the valid bytes.  Note that
+	// this will be an empty range if vs.size()==0.
+	if (vs.size==0) {
+		// m_p is the problem byte; advance past it.
+		++m_p;
+	} else {
+		m_p += vs.size;
+	}
+	return true;	
 }
 
 
@@ -332,14 +315,24 @@ bool utf32_iterator_alt::at_start() const {
 
 // false if it didn't go anywhere (=>is_finished() prior to the call)
 bool utf32_iterator_alt::go_next() {
-	// m_p is pointing at the first dw of a valid code unit sequence (of length 1 because utf-32),
-	// the first dw of an invalid code unit sequence, or at the end.
 	if (is_finished()) {
 		return false;
 	}
 
-	++m_p;
+	valid_size vs = starts_with_valid_utf32({m_p,m_pend});
+	if (vs.is_valid) {
+		m_p += vs.size;
+		return true;
+	}
 
+	// m_p + vs.size is the problem byte; [vs.data(), vs.data()+vs.size()) are the valid bytes.  Note that
+	// this will be an empty range if vs.size()==0.
+	if (vs.size==0) {
+		// m_p is the problem byte; advance past it.
+		++m_p;
+	} else {
+		m_p += vs.size;
+	}
 	return true;
 }
 

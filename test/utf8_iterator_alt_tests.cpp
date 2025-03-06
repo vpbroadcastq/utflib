@@ -82,6 +82,7 @@ TEST(iterator_alt_to_utf32_forward, invalid) {
 				codepoint cp(*ou8);
 				EXPECT_EQ(cp, *ocp);
 			} else {
+				bool b = e.utf32_alt[idx_u32] == 0xFFFD;
 				EXPECT_EQ(e.utf32_alt[idx_u32], 0xFFFD);
 				EXPECT_FALSE(ou8.has_value());
 			}
